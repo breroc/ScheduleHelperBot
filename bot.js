@@ -13,6 +13,7 @@ import {
   formatAdminStats,
   formatFullWeek,
   formatMySettings,
+  formatMorningMessage,
   formatNextClass,
   formatScheduleForToday,
   formatScheduleForTomorrow,
@@ -23,6 +24,7 @@ import { getLocale, resolveLanguage, t } from './translations.js';
 import {
   CONFIG,
   addDays,
+  fetchHangzhouWeather,
   getAdminId,
   getNowContext,
   getZonedDateParts,
@@ -196,6 +198,11 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
+  if (command === '/morningtest') {
+    await onMorningTest({ env, chatId, language });
+    return;
+  }
+
   await sendMessage(env, chatId, t(language, 'common.unknownCommand'), {
     reply_markup: mainMenuKeyboard(language)
   });
@@ -325,6 +332,37 @@ async function onStats({ env, chatId, language }) {
   await sendMessage(env, chatId, formatAdminStats(language, stats));
 }
 
+async function onMorningTest({ env, chatId, language }) {
+  if (chatId !== getAdminId(env)) {
+    await sendMessage(env, chatId, t(language, 'common.accessDenied'));
+    return;
+  }
+
+  const user = await getUser(env.DB, chatId);
+  if (!user?.group_name) {
+    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
+      reply_markup: groupKeyboard(language)
+    });
+    return;
+  }
+
+  const now = getNowContext(new Date(), CONFIG.TIMEZONE);
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
+  const weather = await fetchHangzhouWeather();
+  const firstClassIn = getMinutesUntilFirstClass(lessons, now.nowMinutes);
+
+  await sendMessage(
+    env,
+    chatId,
+    formatMorningMessage(user.language, {
+      weather,
+      lessons,
+      firstClassIn
+    }),
+    { reply_markup: mainMenuKeyboard(user.language) }
+  );
+}
+
 function detectAction(text) {
   if (matchesMenuLabel(text, 'today')) {
     return 'today';
@@ -428,4 +466,19 @@ function groupKeyboard(language) {
     keyboard: [['2-7', '2-8'], ['5-2', '6-2'], [menu.back]],
     resize_keyboard: true
   };
+}
+
+function getMinutesUntilFirstClass(lessons, nowMinutes) {
+  for (const lesson of lessons) {
+    const startMinutes = parseTimeToMinutes(lesson.start_time);
+    if (startMinutes === null) {
+      continue;
+    }
+
+    if (startMinutes >= nowMinutes) {
+      return startMinutes - nowMinutes;
+    }
+  }
+
+  return null;
 }

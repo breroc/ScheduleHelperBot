@@ -18,18 +18,24 @@ import {
 const REMINDER_WINDOW_MINUTES = 2;
 
 export async function handleScheduled(event, env) {
-  const cron = event?.cron || '';
+  const cron = String(event?.cron || '').trim();
+  console.log('scheduled_event', { cron });
 
-  if (cron === CONFIG.MORNING_CRON_UTC) {
+  if (isCronMatch(cron, CONFIG.MORNING_CRON_UTC)) {
     await runMorningCron(env);
     return;
   }
 
-  if (cron === CONFIG.REMINDER_CRON_UTC) {
+  if (isCronMatch(cron, CONFIG.REMINDER_CRON_UTC)) {
     await runReminderCron(env);
     return;
   }
 
+  console.warn('scheduled_event_unknown_cron', {
+    received: cron,
+    morning: CONFIG.MORNING_CRON_UTC,
+    reminder: CONFIG.REMINDER_CRON_UTC
+  });
   await runReminderCron(env);
 }
 
@@ -143,4 +149,23 @@ function getMinutesUntilFirstClass(lessons, nowMinutes) {
   }
 
   return null;
+}
+
+function isCronMatch(received, target) {
+  return normalizeCron(received) === normalizeCron(target);
+}
+
+function normalizeCron(cronExpr) {
+  const parts = String(cronExpr || '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 5);
+
+  if (parts.length !== 5) {
+    return String(cronExpr || '').trim();
+  }
+
+  return parts
+    .map((part) => (part === '*/1' ? '*' : part))
+    .join(' ');
 }
