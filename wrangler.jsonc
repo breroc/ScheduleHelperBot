@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "schedule-helper-bot",
+  "main": "worker.js",
+  "compatibility_date": "2026-03-10",
+  "workers_dev": true,
+
+  "vars": {
+    "ADMIN_ID": "787693585"
+  },
+
+  "triggers": {
+    // 07:00 Asia/Shanghai
+    "crons": ["0 23 * * *", "*/2 * * * *"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "schedule-helper-db",
+      "database_id": "cb07ba01-0ca8-4135-ad9d-e44e20d06602"
+    }
+  ]
+}

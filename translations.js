@@ -1,0 +1,279 @@
+const TRANSLATIONS = {
+  en: {
+    languageName: 'English',
+    menu: {
+      today: '📅 Today',
+      tomorrow: '📆 Tomorrow',
+      fullWeek: '📖 Full week',
+      nextClass: '📚 Next class',
+      settings: '⚙️ Settings',
+      language: '🌐 Language',
+      notifications: '🔔 Notifications',
+      mySettings: '🧾 My settings',
+      changeGroup: '🔄 Change group',
+      back: '⬅️ Back'
+    },
+    labels: {
+      russian: 'Русский',
+      english: 'English',
+      off: 'Off'
+    },
+    common: {
+      accessDenied: '⛔ Access denied.',
+      unknownCommand: 'I did not understand that. Use the menu below.',
+      chooseGroup: 'Choose your group:',
+      pickLanguage: 'Choose language:',
+      pickNotifications: 'Choose reminder settings:',
+      openingSettings: '⚙️ Settings menu',
+      mainMenu: '✅ Main menu',
+      loading: 'Loading...'
+    },
+    start: {
+      newUser: '👋 <b>Welcome to Schedule Helper Bot!</b>\n\nI will help you with classes, reminders and morning updates.',
+      knownUser: '👋 <b>Welcome back!</b>\n\nOpen the menu to view your schedule.'
+    },
+    groups: {
+      saved: '✅ Group saved: <b>{group}</b>',
+      changed: '✅ Group changed to <b>{group}</b>'
+    },
+    schedule: {
+      todayTitle: '📅 <b>Today</b>',
+      tomorrowTitle: '📆 <b>Tomorrow</b>',
+      weekTitle: '📖 <b>Full week</b>',
+      noLessonsToday: '🎉 Today there are no classes.',
+      noLessonsTomorrow: '🎉 Tomorrow there are no classes.',
+      noLessonsWeek: '🎉 This week has no classes.',
+      noLessonsDay: 'No classes',
+      noGroup: '👥 Please choose your group first.',
+      statusStartsIn: '🟢 Starts in {time}',
+      statusInProgress: '🟠 In progress',
+      statusFinished: '⚪ Finished',
+      nextClassTitle: '📚 <b>Next class</b>',
+      currentClassTitle: '📚 <b>Current class</b>',
+      noMoreToday: '✅ No more classes today.',
+      firstClassIn: 'First class in: <b>{time}</b>'
+    },
+    settings: {
+      title: '⚙️ <b>Settings</b>',
+      languageUpdated: '🌐 Language updated: <b>{language}</b>',
+      notificationsUpdated: '🔔 Notifications updated: <b>{value}</b>',
+      mySettingsTitle: '🧾 <b>My settings</b>',
+      group: '👥 Group',
+      language: '🌐 Language',
+      notifications: '🔔 Notifications',
+      reminder: '⏰ Reminder',
+      morning: '🌅 Morning schedule',
+      enabled: 'On',
+      disabled: 'Off',
+      notSelected: 'Not selected'
+    },
+    weather: {
+      title: 'Weather in Hangzhou:',
+      unavailable: 'Weather is temporarily unavailable.',
+      adviceUmbrella: '☔ Take an umbrella',
+      adviceHot: '🥤 It is hot, take water',
+      adviceCold: '🧥 Dress warmly',
+      adviceGood: '✨ Have a great day',
+      clear: 'Clear',
+      mainlyClear: 'Mainly clear',
+      partlyCloudy: 'Partly cloudy',
+      cloudy: 'Cloudy',
+      fog: 'Fog',
+      drizzle: 'Drizzle',
+      rain: 'Rain',
+      showers: 'Showers',
+      snow: 'Snow',
+      thunder: 'Thunderstorm',
+      unknown: 'Unknown weather'
+    },
+    morning: {
+      title: '🌤 <b>Good morning!</b>',
+      todayLessons: '📅 <b>Today:</b>',
+      noLessons: '🎉 Today there are no classes.'
+    },
+    reminders: {
+      title: '⏰ <b>Upcoming class reminder</b>',
+      startsIn: 'Starts in <b>{time}</b>'
+    },
+    admin: {
+      broadcastUsage: 'Usage: /broadcast your text',
+      broadcastDone: '📣 Broadcast completed\n\n✅ Sent: <b>{sent}</b>\n❌ Failed: <b>{failed}</b>',
+      statsTitle: '📊 <b>Bot stats</b>',
+      totalUsers: '👥 Total users: <b>{count}</b>',
+      notificationsOn: '🔔 Notifications enabled: <b>{count}</b>',
+      byGroupTitle: 'Groups:'
+    },
+    weekdays: {
+      1: 'Monday',
+      2: 'Tuesday',
+      3: 'Wednesday',
+      4: 'Thursday',
+      5: 'Friday',
+      6: 'Saturday',
+      7: 'Sunday'
+    },
+    time: {
+      min: 'min',
+      hour: 'h'
+    }
+  },
+  ru: {
+    languageName: 'Русский',
+    menu: {
+      today: '📅 Сегодня',
+      tomorrow: '📆 Завтра',
+      fullWeek: '📖 Вся неделя',
+      nextClass: '📚 Следующая пара',
+      settings: '⚙️ Настройки',
+      language: '🌐 Язык',
+      notifications: '🔔 Уведомления',
+      mySettings: '🧾 Мои настройки',
+      changeGroup: '🔄 Сменить группу',
+      back: '⬅️ Назад'
+    },
+    labels: {
+      russian: 'Русский',
+      english: 'English',
+      off: 'Off'
+    },
+    common: {
+      accessDenied: '⛔ Доступ запрещен.',
+      unknownCommand: 'Не понял команду. Используйте меню ниже.',
+      chooseGroup: 'Выберите вашу группу:',
+      pickLanguage: 'Выберите язык:',
+      pickNotifications: 'Выберите настройки напоминаний:',
+      openingSettings: '⚙️ Меню настроек',
+      mainMenu: '✅ Главное меню',
+      loading: 'Загрузка...'
+    },
+    start: {
+      newUser: '👋 <b>Добро пожаловать в Schedule Helper Bot!</b>\n\nЯ помогу с расписанием, напоминаниями и утренними сообщениями.',
+      knownUser: '👋 <b>С возвращением!</b>\n\nОткройте меню, чтобы посмотреть расписание.'
+    },
+    groups: {
+      saved: '✅ Группа сохранена: <b>{group}</b>',
+      changed: '✅ Группа изменена на <b>{group}</b>'
+    },
+    schedule: {
+      todayTitle: '📅 <b>Сегодня</b>',
+      tomorrowTitle: '📆 <b>Завтра</b>',
+      weekTitle: '📖 <b>Вся неделя</b>',
+      noLessonsToday: '🎉 Сегодня занятий нет.',
+      noLessonsTomorrow: '🎉 Завтра занятий нет.',
+      noLessonsWeek: '🎉 На этой неделе занятий нет.',
+      noLessonsDay: 'Занятий нет',
+      noGroup: '👥 Сначала выберите группу.',
+      statusStartsIn: '🟢 До начала: {time}',
+      statusInProgress: '🟠 Идёт сейчас',
+      statusFinished: '⚪ Завершено',
+      nextClassTitle: '📚 <b>Следующая пара</b>',
+      currentClassTitle: '📚 <b>Текущая пара</b>',
+      noMoreToday: '✅ На сегодня пар больше нет.',
+      firstClassIn: 'До первой пары: <b>{time}</b>'
+    },
+    settings: {
+      title: '⚙️ <b>Настройки</b>',
+      languageUpdated: '🌐 Язык обновлен: <b>{language}</b>',
+      notificationsUpdated: '🔔 Уведомления обновлены: <b>{value}</b>',
+      mySettingsTitle: '🧾 <b>Мои настройки</b>',
+      group: '👥 Группа',
+      language: '🌐 Язык',
+      notifications: '🔔 Уведомления',
+      reminder: '⏰ Напоминание',
+      morning: '🌅 Утреннее расписание',
+      enabled: 'Вкл',
+      disabled: 'Выкл',
+      notSelected: 'Не выбрана'
+    },
+    weather: {
+      title: 'Погода в Ханчжоу:',
+      unavailable: 'Погода временно недоступна.',
+      adviceUmbrella: '☔ Возьмите зонт',
+      adviceHot: '🥤 Жарко, возьмите воду',
+      adviceCold: '🧥 Одевайтесь теплее',
+      adviceGood: '✨ Хорошего дня',
+      clear: 'Ясно',
+      mainlyClear: 'Преимущественно ясно',
+      partlyCloudy: 'Переменная облачность',
+      cloudy: 'Облачно',
+      fog: 'Туман',
+      drizzle: 'Морось',
+      rain: 'Дождь',
+      showers: 'Ливни',
+      snow: 'Снег',
+      thunder: 'Гроза',
+      unknown: 'Неизвестная погода'
+    },
+    morning: {
+      title: '🌤 <b>Доброе утро!</b>',
+      todayLessons: '📅 <b>Сегодня:</b>',
+      noLessons: '🎉 Сегодня занятий нет.'
+    },
+    reminders: {
+      title: '⏰ <b>Напоминание о паре</b>',
+      startsIn: 'До начала: <b>{time}</b>'
+    },
+    admin: {
+      broadcastUsage: 'Использование: /broadcast ваш текст',
+      broadcastDone: '📣 Рассылка завершена\n\n✅ Отправлено: <b>{sent}</b>\n❌ Ошибок: <b>{failed}</b>',
+      statsTitle: '📊 <b>Статистика бота</b>',
+      totalUsers: '👥 Всего пользователей: <b>{count}</b>',
+      notificationsOn: '🔔 С уведомлениями: <b>{count}</b>',
+      byGroupTitle: 'Группы:'
+    },
+    weekdays: {
+      1: 'Понедельник',
+      2: 'Вторник',
+      3: 'Среда',
+      4: 'Четверг',
+      5: 'Пятница',
+      6: 'Суббота',
+      7: 'Воскресенье'
+    },
+    time: {
+      min: 'мин',
+      hour: 'ч'
+    }
+  }
+};
+
+export function resolveLanguage(language) {
+  return language === 'ru' ? 'ru' : 'en';
+}
+
+export function t(language, key, params = {}) {
+  const lang = resolveLanguage(language);
+  const template = key.split('.').reduce((acc, part) => {
+    if (!acc || typeof acc !== 'object') {
+      return undefined;
+    }
+    return acc[part];
+  }, TRANSLATIONS[lang]);
+
+  if (typeof template !== 'string') {
+    return key;
+  }
+
+  return template.replace(/\{(\w+)\}/g, (_, token) => {
+    return String(params[token] ?? '');
+  });
+}
+
+export function getLocale(language) {
+  return TRANSLATIONS[resolveLanguage(language)];
+}
+
+export function getMenuLabels(language) {
+  return getLocale(language).menu;
+}
+
+export function getAllMenuPhrases() {
+  const phrases = [];
+  for (const locale of Object.values(TRANSLATIONS)) {
+    const items = [...Object.values(locale.menu), locale.labels.russian, locale.labels.english, locale.labels.off];
+    phrases.push(...items);
+  }
+  return [...new Set(phrases)];
+}
+
+export const SUPPORTED_LANGUAGES = ['en', 'ru'];
