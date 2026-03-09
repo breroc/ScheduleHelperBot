@@ -45,20 +45,14 @@ export async function ensureSchema(db) {
 }
 
 async function migrateSchema(db) {
-  await runSql(
-    db,
-    "CREATE TABLE IF NOT EXISTS users (chat_id INTEGER PRIMARY KEY, group_name TEXT, language TEXT NOT NULL DEFAULT 'en', notifications_enabled INTEGER NOT NULL DEFAULT 1, reminder_minutes INTEGER NOT NULL DEFAULT 10, morning_enabled INTEGER NOT NULL DEFAULT 1, last_morning_sent TEXT, last_reminder_key TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
-  );
-
-  await runSql(
-    db,
-    'CREATE TABLE IF NOT EXISTS schedule (id INTEGER PRIMARY KEY AUTOINCREMENT, group_name TEXT NOT NULL, weekday INTEGER NOT NULL, lesson_number INTEGER, start_time TEXT NOT NULL, end_time TEXT NOT NULL, subject TEXT NOT NULL, teacher TEXT, classroom TEXT)'
-  );
-
-  await runSql(
-    db,
-    'CREATE TABLE IF NOT EXISTS announcements (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, text TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)'
-  );
+  const hasUsers = await tableExists(db, 'users');
+  const hasSchedule = await tableExists(db, 'schedule');
+  const hasAnnouncements = await tableExists(db, 'announcements');
+  if (!hasUsers || !hasSchedule || !hasAnnouncements) {
+    throw new Error(
+      `required_tables_missing users=${hasUsers} schedule=${hasSchedule} announcements=${hasAnnouncements}`
+    );
+  }
 
   const userColumns = await getTableColumns(db, 'users');
   for (const migration of USER_COLUMN_MIGRATIONS) {
@@ -84,6 +78,15 @@ async function getTableColumns(db, tableName) {
   }
 
   return columns;
+}
+
+async function tableExists(db, tableName) {
+  const row = await db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1")
+    .bind(tableName)
+    .first();
+
+  return Boolean(row?.name);
 }
 
 export async function ensureUser(db, chatId, language) {
