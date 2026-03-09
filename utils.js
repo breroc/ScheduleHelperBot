@@ -6,6 +6,8 @@ export const CONFIG = Object.freeze({
   DEFAULT_LANGUAGE: 'en',
   DEFAULT_REMINDER_MINUTES: 10,
   MORNING_CRON_UTC: '0 23 * * *',
+  EVENING_PREVIEW_CRON_UTC: '0 12 * * *',
+  ADMIN_REPORT_CRON_UTC: '5 12 * * *',
   REMINDER_CRON_UTC: '*/2 * * * *',
   DEFAULT_ADMIN_ID: 123456789
 });

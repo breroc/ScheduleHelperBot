@@ -31,6 +31,10 @@ const USER_COLUMN_MIGRATIONS = [
   {
     name: 'last_reminder_key',
     sql: 'ALTER TABLE users ADD COLUMN last_reminder_key TEXT'
+  },
+  {
+    name: 'last_evening_sent',
+    sql: 'ALTER TABLE users ADD COLUMN last_evening_sent TEXT'
   }
 ];
 
@@ -122,7 +126,8 @@ export async function getUser(db, chatId) {
     reminder_minutes: Number(user.reminder_minutes ?? CONFIG.DEFAULT_REMINDER_MINUTES),
     morning_enabled: Number(user.morning_enabled ?? 1),
     last_morning_sent: user.last_morning_sent ?? null,
-    last_reminder_key: user.last_reminder_key ?? null
+    last_reminder_key: user.last_reminder_key ?? null,
+    last_evening_sent: user.last_evening_sent ?? null
   };
 }
 
@@ -152,6 +157,13 @@ export async function setLastReminderKey(db, chatId, reminderKey) {
   await db
     .prepare('UPDATE users SET last_reminder_key = ? WHERE chat_id = ?')
     .bind(reminderKey, chatId)
+    .run();
+}
+
+export async function setLastEveningSent(db, chatId, dateKey) {
+  await db
+    .prepare('UPDATE users SET last_evening_sent = ? WHERE chat_id = ?')
+    .bind(dateKey, chatId)
     .run();
 }
 
@@ -196,6 +208,22 @@ export async function getUsersForReminders(db) {
   }));
 }
 
+export async function getUsersForEvening(db) {
+  const { results } = await db
+    .prepare(
+      'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
+    )
+    .all();
+
+  return (results ?? []).map((row) => ({
+    chat_id: Number(row.chat_id),
+    group_name: row.group_name,
+    language: row.language ?? CONFIG.DEFAULT_LANGUAGE,
+    morning_enabled: Number(row.morning_enabled ?? 1),
+    last_evening_sent: row.last_evening_sent ?? null
+  }));
+}
+
 export async function getStats(db) {
   const total = await db.prepare('SELECT COUNT(*) AS count FROM users').first();
   const notifications = await db
@@ -213,6 +241,65 @@ export async function getStats(db) {
       count: Number(row.count ?? 0)
     }))
   };
+}
+
+export async function logCronDelivery(db, dateKey, kind, sent, failed) {
+  const sentValue = Number(sent ?? 0);
+  const failedValue = Number(failed ?? 0);
+
+  if (sentValue > 0) {
+    await insertAnnouncement(db, `cron:${dateKey}:${kind}:sent`, String(sentValue));
+  }
+
+  if (failedValue > 0) {
+    await insertAnnouncement(db, `cron:${dateKey}:${kind}:failed`, String(failedValue));
+  }
+}
+
+export async function getDailyCronDeliveryStats(db, dateKey) {
+  const result = {
+    morning: { sent: 0, failed: 0 },
+    reminder: { sent: 0, failed: 0 },
+    evening: { sent: 0, failed: 0 }
+  };
+
+  const { results } = await db
+    .prepare('SELECT kind, text FROM announcements WHERE kind LIKE ?')
+    .bind(`cron:${dateKey}:%`)
+    .all();
+
+  for (const row of results ?? []) {
+    const kind = String(row.kind ?? '');
+    const parts = kind.split(':');
+    if (parts.length !== 4) {
+      continue;
+    }
+
+    const [, rowDateKey, rowKind, rowMetric] = parts;
+    if (rowDateKey !== dateKey || !(rowKind in result) || (rowMetric !== 'sent' && rowMetric !== 'failed')) {
+      continue;
+    }
+
+    const value = Number(row.text ?? 0);
+    if (Number.isFinite(value) && value > 0) {
+      result[rowKind][rowMetric] += value;
+    }
+  }
+
+  return result;
+}
+
+export async function hasAdminDailyReport(db, dateKey) {
+  const row = await db
+    .prepare('SELECT id FROM announcements WHERE kind = ? LIMIT 1')
+    .bind(`cron_report_sent:${dateKey}`)
+    .first();
+
+  return Boolean(row?.id);
+}
+
+export async function markAdminDailyReport(db, dateKey) {
+  await insertAnnouncement(db, `cron_report_sent:${dateKey}`, '1');
 }
 
 export async function getLessonsByGroupAndWeekday(db, groupName, weekday) {
@@ -371,6 +458,13 @@ function pickColumn(columns, candidates) {
 
 function quoteIdent(identifier) {
   return `"${String(identifier).replaceAll('"', '""')}"`;
+}
+
+async function insertAnnouncement(db, kind, text) {
+  await db
+    .prepare('INSERT INTO announcements (kind, text) VALUES (?, ?)')
+    .bind(kind, text)
+    .run();
 }
 
 async function runSql(db, sql) {

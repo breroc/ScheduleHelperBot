@@ -10,8 +10,8 @@
   },
 
   "triggers": {
-    // 07:00 Asia/Shanghai
-    "crons": ["0 23 * * *", "*/2 * * * *"]
+    // 07:00 morning digest, 20:00 tomorrow preview, 20:05 admin daily report, reminders every 2 min
+    "crons": ["0 23 * * *", "0 12 * * *", "5 12 * * *", "*/2 * * * *"]
   },
 
   "d1_databases": [

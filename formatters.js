@@ -25,6 +25,10 @@ export function formatScheduleForToday(language, lessons, nowMinutes) {
   return `${title}\n\n${blocks.join('\n\n')}`;
 }
 
+export function prependQuickGroupHeader(language, groupName, body) {
+  return `${t(language, 'schedule.quickGroupHeader', { group: escapeHtml(groupName) })}\n\n${body}`;
+}
+
 export function formatScheduleForTomorrow(language, lessons) {
   const title = t(language, 'schedule.tomorrowTitle');
   if (!lessons.length) {
@@ -181,6 +185,27 @@ export function formatMorningMessage(language, payload) {
   return lines.join('\n');
 }
 
+export function formatEveningPreview(language, payload) {
+  const { lessons } = payload;
+  const lines = [t(language, 'evening.title'), ''];
+
+  if (!lessons.length) {
+    lines.push(t(language, 'evening.noLessons'));
+    return lines.join('\n');
+  }
+
+  lines.push(t(language, 'evening.lessonsTitle'));
+  for (let i = 0; i < lessons.length; i += 1) {
+    const lesson = lessons[i];
+    const prefix = numberEmoji(i);
+    const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
+    const subject = escapeHtml(lesson.subject || '-');
+    lines.push(`${prefix} ${range} ${subject}`);
+  }
+
+  return lines.join('\n');
+}
+
 export function formatReminder(language, lesson, minutesLeft) {
   const lines = [t(language, 'reminders.title'), ''];
   lines.push(formatSingleLessonDetails(lesson));
@@ -191,7 +216,7 @@ export function formatReminder(language, lesson, minutesLeft) {
   return lines.join('\n');
 }
 
-export function formatAdminStats(language, stats) {
+export function formatAdminStats(language, stats, dailyStats = null, dateKey = '') {
   const lines = [t(language, 'admin.statsTitle'), ''];
   lines.push(t(language, 'admin.totalUsers', { count: stats.totalUsers }));
   lines.push(t(language, 'admin.notificationsOn', { count: stats.notificationsEnabled }));
@@ -206,7 +231,51 @@ export function formatAdminStats(language, stats) {
     }
   }
 
+  if (dailyStats) {
+    lines.push('');
+    lines.push(t(language, 'admin.dailyTitle', { date: dateKey }));
+    lines.push(t(language, 'admin.morningLine', {
+      sent: dailyStats.morning.sent,
+      failed: dailyStats.morning.failed
+    }));
+    lines.push(t(language, 'admin.reminderLine', {
+      sent: dailyStats.reminder.sent,
+      failed: dailyStats.reminder.failed
+    }));
+    lines.push(t(language, 'admin.eveningLine', {
+      sent: dailyStats.evening.sent,
+      failed: dailyStats.evening.failed
+    }));
+  }
+
   return lines.join('\n');
+}
+
+export function formatAdminDailyReport(language, dateKey, dailyStats) {
+  return [
+    t(language, 'admin.dailyTitle', { date: dateKey }),
+    '',
+    t(language, 'admin.morningLine', {
+      sent: dailyStats.morning.sent,
+      failed: dailyStats.morning.failed
+    }),
+    t(language, 'admin.reminderLine', {
+      sent: dailyStats.reminder.sent,
+      failed: dailyStats.reminder.failed
+    }),
+    t(language, 'admin.eveningLine', {
+      sent: dailyStats.evening.sent,
+      failed: dailyStats.evening.failed
+    })
+  ].join('\n');
+}
+
+export function formatHelp(language, isAdmin = false) {
+  const base = `${t(language, 'help.title')}\n\n${t(language, 'help.body')}`;
+  if (isAdmin) {
+    return `${base}${t(language, 'help.admin')}`;
+  }
+  return base;
 }
 
 function formatLessonBlock(lesson, index, statusLine) {

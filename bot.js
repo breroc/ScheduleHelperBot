@@ -1,6 +1,7 @@
 import {
   ensureUser,
   getAllUsers,
+  getDailyCronDeliveryStats,
   getLessonsByGroupAndWeekday,
   getStats,
   getUser,
@@ -12,12 +13,14 @@ import {
 import {
   formatAdminStats,
   formatFullWeek,
+  formatHelp,
   formatMySettings,
   formatMorningMessage,
   formatNextClass,
   formatScheduleForToday,
   formatScheduleForTomorrow,
-  formatSettingsSummary
+  formatSettingsSummary,
+  prependQuickGroupHeader
 } from './formatters.js';
 import { sendMessage } from './telegram.js';
 import { getLocale, resolveLanguage, t } from './translations.js';
@@ -193,8 +196,18 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
+  if (command === '/today') {
+    await onTodayCommand({ env, chatId, user, language, argsText });
+    return;
+  }
+
   if (command === '/stats') {
     await onStats({ env, chatId, language });
+    return;
+  }
+
+  if (command === '/help') {
+    await onHelp({ env, chatId, language });
     return;
   }
 
@@ -220,6 +233,41 @@ async function onToday({ env, chatId, user, language }) {
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
 
   await sendMessage(env, chatId, formatScheduleForToday(language, lessons, now.nowMinutes), {
+    reply_markup: mainMenuKeyboard(language)
+  });
+}
+
+async function onTodayCommand({ env, chatId, user, language, argsText }) {
+  const candidate = String(argsText || '').trim().split(/\s+/).filter(Boolean)[0] ?? '';
+  const requestedGroup = candidate ? candidate : null;
+
+  if (requestedGroup && !CONFIG.GROUPS.includes(requestedGroup)) {
+    await sendMessage(
+      env,
+      chatId,
+      `${t(language, 'common.invalidGroup', { groups: CONFIG.GROUPS.join(', ') })}\n${t(language, 'common.todayUsage')}`,
+      { reply_markup: mainMenuKeyboard(language) }
+    );
+    return;
+  }
+
+  const targetGroup = requestedGroup || user.group_name;
+  if (!targetGroup) {
+    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
+      reply_markup: groupKeyboard(language)
+    });
+    return;
+  }
+
+  const now = getNowContext(new Date(), CONFIG.TIMEZONE);
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, targetGroup, now.zoned.weekday);
+  let text = formatScheduleForToday(language, lessons, now.nowMinutes);
+
+  if (requestedGroup) {
+    text = prependQuickGroupHeader(language, targetGroup, text);
+  }
+
+  await sendMessage(env, chatId, text, {
     reply_markup: mainMenuKeyboard(language)
   });
 }
@@ -328,8 +376,17 @@ async function onStats({ env, chatId, language }) {
     return;
   }
 
+  const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const stats = await getStats(env.DB);
-  await sendMessage(env, chatId, formatAdminStats(language, stats));
+  const dailyStats = await getDailyCronDeliveryStats(env.DB, now.dateKey);
+  await sendMessage(env, chatId, formatAdminStats(language, stats, dailyStats, now.dateKey));
+}
+
+async function onHelp({ env, chatId, language }) {
+  const isAdmin = chatId === getAdminId(env);
+  await sendMessage(env, chatId, formatHelp(language, isAdmin), {
+    reply_markup: mainMenuKeyboard(language)
+  });
 }
 
 async function onMorningTest({ env, chatId, language }) {

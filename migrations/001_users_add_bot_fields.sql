@@ -6,3 +6,4 @@ ALTER TABLE users ADD COLUMN reminder_minutes INTEGER NOT NULL DEFAULT 10;
 ALTER TABLE users ADD COLUMN morning_enabled INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN last_morning_sent TEXT;
 ALTER TABLE users ADD COLUMN last_reminder_key TEXT;
+ALTER TABLE users ADD COLUMN last_evening_sent TEXT;

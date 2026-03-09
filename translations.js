@@ -24,6 +24,8 @@ const TRANSLATIONS = {
       chooseGroup: 'Choose your group:',
       pickLanguage: 'Choose language:',
       pickNotifications: 'Choose reminder settings:',
+      invalidGroup: '❌ Unknown group. Available groups: {groups}',
+      todayUsage: 'Usage: <code>/today 2-8</code>',
       openingSettings: '⚙️ Settings menu',
       mainMenu: '✅ Main menu',
       loading: 'Loading...'
@@ -51,7 +53,8 @@ const TRANSLATIONS = {
       nextClassTitle: '📚 <b>Next class</b>',
       currentClassTitle: '📚 <b>Current class</b>',
       noMoreToday: '✅ No more classes today.',
-      firstClassIn: 'First class in: <b>{time}</b>'
+      firstClassIn: 'First class in: <b>{time}</b>',
+      quickGroupHeader: '👥 Quick view for group: <b>{group}</b>'
     },
     settings: {
       title: '⚙️ <b>Settings</b>',
@@ -101,7 +104,21 @@ const TRANSLATIONS = {
       statsTitle: '📊 <b>Bot stats</b>',
       totalUsers: '👥 Total users: <b>{count}</b>',
       notificationsOn: '🔔 Notifications enabled: <b>{count}</b>',
-      byGroupTitle: 'Groups:'
+      byGroupTitle: 'Groups:',
+      dailyTitle: '📈 <b>Daily deliveries ({date})</b>',
+      morningLine: '🌅 Morning: sent <b>{sent}</b>, failed <b>{failed}</b>',
+      reminderLine: '🔔 Reminders: sent <b>{sent}</b>, failed <b>{failed}</b>',
+      eveningLine: '🌙 Evening preview: sent <b>{sent}</b>, failed <b>{failed}</b>'
+    },
+    evening: {
+      title: '🌙 <b>Tomorrow preview</b>',
+      noLessons: '🎉 Tomorrow there are no classes.',
+      lessonsTitle: '📆 <b>Tomorrow:</b>'
+    },
+    help: {
+      title: '❓ <b>Help</b>',
+      body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for selected group\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n🧾 My settings\n🔄 Change group',
+      admin: '\n\nAdmin:\n/stats - bot stats\n/broadcast text - send to all users\n/morningtest - send morning message to yourself now'
     },
     weekdays: {
       1: 'Monday',
@@ -142,6 +159,8 @@ const TRANSLATIONS = {
       chooseGroup: 'Выберите вашу группу:',
       pickLanguage: 'Выберите язык:',
       pickNotifications: 'Выберите настройки напоминаний:',
+      invalidGroup: '❌ Неизвестная группа. Доступные группы: {groups}',
+      todayUsage: 'Использование: <code>/today 2-8</code>',
       openingSettings: '⚙️ Меню настроек',
       mainMenu: '✅ Главное меню',
       loading: 'Загрузка...'
@@ -169,7 +188,8 @@ const TRANSLATIONS = {
       nextClassTitle: '📚 <b>Следующая пара</b>',
       currentClassTitle: '📚 <b>Текущая пара</b>',
       noMoreToday: '✅ На сегодня пар больше нет.',
-      firstClassIn: 'До первой пары: <b>{time}</b>'
+      firstClassIn: 'До первой пары: <b>{time}</b>',
+      quickGroupHeader: '👥 Быстрый просмотр группы: <b>{group}</b>'
     },
     settings: {
       title: '⚙️ <b>Настройки</b>',
@@ -219,7 +239,21 @@ const TRANSLATIONS = {
       statsTitle: '📊 <b>Статистика бота</b>',
       totalUsers: '👥 Всего пользователей: <b>{count}</b>',
       notificationsOn: '🔔 С уведомлениями: <b>{count}</b>',
-      byGroupTitle: 'Группы:'
+      byGroupTitle: 'Группы:',
+      dailyTitle: '📈 <b>Доставка за день ({date})</b>',
+      morningLine: '🌅 Утро: отправлено <b>{sent}</b>, ошибок <b>{failed}</b>',
+      reminderLine: '🔔 Напоминания: отправлено <b>{sent}</b>, ошибок <b>{failed}</b>',
+      eveningLine: '🌙 Вечерний preview: отправлено <b>{sent}</b>, ошибок <b>{failed}</b>'
+    },
+    evening: {
+      title: '🌙 <b>Коротко о завтра</b>',
+      noLessons: '🎉 Завтра занятий нет.',
+      lessonsTitle: '📆 <b>Завтра:</b>'
+    },
+    help: {
+      title: '❓ <b>Помощь</b>',
+      body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть группу\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n🧾 Мои настройки\n🔄 Сменить группу',
+      admin: '\n\nАдмин:\n/stats - статистика\n/broadcast текст - рассылка всем\n/morningtest - отправить себе утреннее сообщение сейчас'
     },
     weekdays: {
       1: 'Понедельник',
