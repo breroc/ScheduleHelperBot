@@ -10,8 +10,8 @@
   },
 
   "triggers": {
-    // temporary test mode
-    "crons": ["*/1 * * * *", "*/2 * * * *"]
+    // 07:00 Asia/Shanghai
+    "crons": ["0 23 * * *", "*/2 * * * *"]
   },
 
   "d1_databases": [

@@ -5,7 +5,7 @@ export const CONFIG = Object.freeze({
   GROUPS: ['2-7', '2-8', '5-2', '6-2'],
   DEFAULT_LANGUAGE: 'en',
   DEFAULT_REMINDER_MINUTES: 10,
-  MORNING_CRON_UTC: '*/1 * * * *',
+  MORNING_CRON_UTC: '0 23 * * *',
   REMINDER_CRON_UTC: '*/2 * * * *',
   DEFAULT_ADMIN_ID: 123456789
 });
