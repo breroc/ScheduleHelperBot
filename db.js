@@ -2,9 +2,6 @@ import { CONFIG, normalizeWeekdayValue } from './utils.js';
 import { STATIC_SCHEDULE } from './schedule-data.js';
 
 let schemaReadyPromise;
-let scheduleColumnsPromise;
-const scheduleCache = new Map();
-const SCHEDULE_CACHE_TTL_MS = 60 * 1000;
 const staticScheduleState = buildStaticScheduleState(STATIC_SCHEDULE);
 
 const USER_COLUMN_MIGRATIONS = [
@@ -70,11 +67,10 @@ export async function ensureSchema(db) {
 
 async function migrateSchema(db) {
   const hasUsers = await tableExists(db, 'users');
-  const hasSchedule = await tableExists(db, 'schedule');
   const hasAnnouncements = await tableExists(db, 'announcements');
-  if (!hasUsers || !hasSchedule || !hasAnnouncements) {
+  if (!hasUsers || !hasAnnouncements) {
     throw new Error(
-      `required_tables_missing users=${hasUsers} schedule=${hasSchedule} announcements=${hasAnnouncements}`
+      `required_tables_missing users=${hasUsers} announcements=${hasAnnouncements}`
     );
   }
 
@@ -92,17 +88,6 @@ async function migrateSchema(db) {
     'CREATE TABLE IF NOT EXISTS delivery_stats (date_key TEXT NOT NULL, kind TEXT NOT NULL, sent_count INTEGER NOT NULL DEFAULT 0, failed_count INTEGER NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (date_key, kind))'
   );
   await runSqlSafe(db, 'CREATE INDEX IF NOT EXISTS idx_delivery_stats_date_key ON delivery_stats(date_key)');
-
-  const scheduleColumns = await getTableColumns(db, 'schedule');
-  const scheduleColumnList = [...scheduleColumns];
-  const scheduleGroupCol = pickColumn(scheduleColumnList, ['group_name', 'group', 'group_id']);
-  const scheduleWeekdayCol = pickColumn(scheduleColumnList, ['weekday', 'day_of_week', 'week_day', 'day']);
-  if (scheduleGroupCol && scheduleWeekdayCol) {
-    await runSqlSafe(
-      db,
-      `CREATE INDEX IF NOT EXISTS idx_schedule_group_weekday ON schedule(${quoteIdent(scheduleGroupCol)}, ${quoteIdent(scheduleWeekdayCol)})`
-    );
-  }
 }
 
 async function getTableColumns(db, tableName) {
@@ -487,116 +472,12 @@ export async function markAdminDailyReport(db, dateKey) {
   }
 }
 
-export async function getLessonsByGroupAndWeekday(db, groupName, weekday) {
-  const staticLessons = getStaticLessonsByGroupAndWeekday(groupName, weekday);
-  if (staticLessons) {
-    return staticLessons;
-  }
-
-  const map = await getScheduleColumnMap(db);
-  if (!map) {
-    return [];
-  }
-
-  const cacheKey = `day:${groupName}:${weekday}`;
-  const cached = readScheduleCache(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const sql = buildScheduleSelectSql(
-    map,
-    `WHERE ${map.groupExpr} = ?`,
-    `ORDER BY COALESCE(${map.lessonNumberExpr}, 999), ${map.startExpr}`
-  );
-  const { results } = await db.prepare(sql).bind(groupName).all();
-  const lessons = normalizeLessons(results ?? []).filter((lesson) => lesson.weekday === weekday);
-  writeScheduleCache(cacheKey, lessons);
-  return cloneLessons(lessons);
+export async function getLessonsByGroupAndWeekday(_db, groupName, weekday) {
+  return getStaticLessonsByGroupAndWeekday(groupName, weekday);
 }
 
-export async function getWeekLessonsByGroup(db, groupName) {
-  const staticLessons = getStaticWeekLessonsByGroup(groupName);
-  if (staticLessons) {
-    return staticLessons;
-  }
-
-  const map = await getScheduleColumnMap(db);
-  if (!map) {
-    return [];
-  }
-
-  const cacheKey = `week:${groupName}`;
-  const cached = readScheduleCache(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const sql = buildScheduleSelectSql(map, `WHERE ${map.groupExpr} = ?`);
-  const { results } = await db.prepare(sql).bind(groupName).all();
-
-  const lessons = normalizeLessons(results ?? []);
-  lessons.sort(compareLessons);
-
-  writeScheduleCache(cacheKey, lessons);
-  return cloneLessons(lessons);
-}
-
-async function getScheduleColumnMap(db) {
-  if (!scheduleColumnsPromise) {
-    scheduleColumnsPromise = detectScheduleColumnMap(db);
-  }
-
-  return scheduleColumnsPromise;
-}
-
-async function detectScheduleColumnMap(db) {
-  const columns = await getTableColumns(db, 'schedule');
-  if (columns.size === 0) {
-    return null;
-  }
-
-  const colList = [...columns];
-  const groupCol = pickColumn(colList, ['group_name', 'group', 'group_id']);
-  const weekdayCol = pickColumn(colList, ['weekday', 'day_of_week', 'week_day', 'day']);
-  const lessonNumberCol = pickColumn(colList, ['lesson_number', 'pair_number', 'number', 'lesson_no']);
-  const startCol = pickColumn(colList, ['start_time', 'time_start', 'starts_at', 'time_from']);
-  const endCol = pickColumn(colList, ['end_time', 'time_end', 'ends_at', 'time_to']);
-  const subjectCol = pickColumn(colList, ['subject', 'lesson_name', 'name', 'title']);
-  const teacherCol = pickColumn(colList, ['teacher', 'lecturer', 'professor']);
-  const classroomCol = pickColumn(colList, ['classroom', 'room', 'auditorium', 'cabinet']);
-
-  if (!groupCol || !weekdayCol || !startCol || !endCol || !subjectCol) {
-    console.error('schedule_columns_missing', { groupCol, weekdayCol, startCol, endCol, subjectCol });
-    return null;
-  }
-
-  return {
-    groupExpr: quoteIdent(groupCol),
-    weekdayExpr: quoteIdent(weekdayCol),
-    lessonNumberExpr: lessonNumberCol ? quoteIdent(lessonNumberCol) : 'NULL',
-    startExpr: quoteIdent(startCol),
-    endExpr: quoteIdent(endCol),
-    subjectExpr: quoteIdent(subjectCol),
-    teacherExpr: teacherCol ? quoteIdent(teacherCol) : 'NULL',
-    classroomExpr: classroomCol ? quoteIdent(classroomCol) : 'NULL'
-  };
-}
-
-function buildScheduleSelectSql(map, whereClause = '', orderByClause = '') {
-  return `
-    SELECT
-      ${map.lessonNumberExpr} AS lesson_number,
-      ${map.weekdayExpr} AS weekday,
-      ${map.startExpr} AS start_time,
-      ${map.endExpr} AS end_time,
-      ${map.subjectExpr} AS subject,
-      ${map.teacherExpr} AS teacher,
-      ${map.classroomExpr} AS classroom
-    FROM schedule
-    ${whereClause}
-    ${orderByClause}
-  `;
+export async function getWeekLessonsByGroup(_db, groupName) {
+  return getStaticWeekLessonsByGroup(groupName);
 }
 
 function buildStaticScheduleState(source) {
@@ -634,7 +515,7 @@ function buildStaticScheduleState(source) {
 function getStaticLessonsByGroupAndWeekday(groupName, weekday) {
   const lessons = staticScheduleState.byGroup.get(groupName);
   if (!lessons) {
-    return null;
+    return [];
   }
 
   return cloneLessons(lessons.filter((lesson) => lesson.weekday === weekday));
@@ -643,47 +524,14 @@ function getStaticLessonsByGroupAndWeekday(groupName, weekday) {
 function getStaticWeekLessonsByGroup(groupName) {
   const lessons = staticScheduleState.byGroup.get(groupName);
   if (!lessons) {
-    return null;
+    return [];
   }
 
   return cloneLessons(lessons);
 }
 
-function readScheduleCache(key) {
-  const entry = scheduleCache.get(key);
-  if (!entry) {
-    return null;
-  }
-
-  if (Date.now() > entry.expiresAt) {
-    scheduleCache.delete(key);
-    return null;
-  }
-
-  return cloneLessons(entry.lessons);
-}
-
-function writeScheduleCache(key, lessons) {
-  scheduleCache.set(key, {
-    expiresAt: Date.now() + SCHEDULE_CACHE_TTL_MS,
-    lessons: cloneLessons(lessons)
-  });
-}
-
 function cloneLessons(lessons) {
   return (Array.isArray(lessons) ? lessons : []).map((lesson) => ({ ...lesson }));
-}
-
-function normalizeLessons(rows) {
-  return rows.map((row) => ({
-    lesson_number: normalizeNullableNumber(row.lesson_number),
-    weekday: normalizeWeekdayValue(row.weekday),
-    start_time: normalizeTime(row.start_time),
-    end_time: normalizeTime(row.end_time),
-    subject: row.subject ?? '',
-    teacher: row.teacher ?? '',
-    classroom: row.classroom ?? ''
-  }));
 }
 
 function compareLessons(a, b) {
@@ -724,19 +572,6 @@ function normalizeTime(value) {
   const hours = matched[1].padStart(2, '0');
   const minutes = matched[2];
   return `${hours}:${minutes}`;
-}
-
-function pickColumn(columns, candidates) {
-  for (const candidate of candidates) {
-    if (columns.includes(candidate)) {
-      return candidate;
-    }
-  }
-  return null;
-}
-
-function quoteIdent(identifier) {
-  return `"${String(identifier).replaceAll('"', '""')}"`;
 }
 
 function normalizeOptionalText(value) {
