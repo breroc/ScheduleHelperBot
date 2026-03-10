@@ -34,7 +34,7 @@ export async function handleScheduled(event, env) {
   const cron = String(event?.cron || '').trim();
   console.log('scheduled_event', { cron });
 
-  const matchedMorningTime = getMatchedMorningTime(cron);
+  const matchedMorningTime = getMatchedMorningTime(cron, event?.scheduledTime);
   if (matchedMorningTime) {
     await runMorningCron(env, matchedMorningTime);
     return;
@@ -287,13 +287,23 @@ function isCronMatch(received, target) {
   return normalizedReceived === normalizeCron(target);
 }
 
-function getMatchedMorningTime(cronExpr) {
+function getMatchedMorningTime(cronExpr, scheduledTime) {
   const cronList = Array.isArray(CONFIG.MORNING_CRON_UTC) ? CONFIG.MORNING_CRON_UTC : [CONFIG.MORNING_CRON_UTC];
   const index = cronList.findIndex((value) => normalizeCron(value) === normalizeCron(cronExpr));
   if (index === -1) {
     return null;
   }
-  return CONFIG.MORNING_TIME_OPTIONS[index] ?? null;
+
+  if (index === 0) {
+    const scheduledDate = Number.isFinite(Number(scheduledTime)) ? new Date(Number(scheduledTime)) : new Date();
+    const scheduledParts = getZonedDateParts(scheduledDate, CONFIG.TIMEZONE);
+    const scheduledClock = getClockKey(scheduledParts);
+    if (scheduledClock === '07:00' || scheduledClock === '07:30') {
+      return scheduledClock;
+    }
+  }
+
+  return CONFIG.MORNING_TIME_OPTIONS[index + 1] ?? null;
 }
 
 function countSettledResults(results) {

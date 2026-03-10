@@ -12,7 +12,7 @@
 
   "triggers": {
     // 07:00/07:30/08:00 morning digest windows, 20:00 tomorrow preview, 20:05 admin daily report, reminders every 2 min
-    "crons": ["0 23 * * *", "30 23 * * *", "0 0 * * *", "0 12 * * *", "5 12 * * *", "*/2 * * * *"]
+    "crons": ["*/30 23 * * *", "0 0 * * *", "0 12 * * *", "5 12 * * *", "*/2 * * * *"]
   },
 
   "d1_databases": [

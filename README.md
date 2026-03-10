@@ -45,8 +45,7 @@ Configured in `wrangler.jsonc`:
 - `main: worker.js`
 - D1 binding name `DB`
 - cron triggers:
-  - `0 23 * * *` (07:00 Asia/Shanghai morning message)
-  - `30 23 * * *` (07:30 Asia/Shanghai morning message)
+  - `*/30 23 * * *` (07:00 and 07:30 Asia/Shanghai morning message)
   - `0 0 * * *` (08:00 Asia/Shanghai morning message)
   - `0 12 * * *` (20:00 Asia/Shanghai tomorrow preview)
   - `5 12 * * *` (20:05 Asia/Shanghai daily admin report)
@@ -118,7 +117,7 @@ All schedule logic is calculated in `Asia/Shanghai`:
 
 ## Cron behavior
 
-### Morning cron (`0 23 * * *`, `30 23 * * *`, `0 0 * * *` UTC)
+### Morning cron (`*/30 23 * * *`, `0 0 * * *` UTC)
 At `07:00`, `07:30`, or `08:00` Shanghai local time bot sends:
 - greeting
 - Hangzhou weather (Open-Meteo)

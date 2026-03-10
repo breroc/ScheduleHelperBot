@@ -9,7 +9,7 @@ export const CONFIG = Object.freeze({
   MORNING_TIME_OPTIONS: ['07:00', '07:30', '08:00'],
   SEND_BATCH_SIZE: 10,
   SEND_BATCH_PAUSE_MS: 300,
-  MORNING_CRON_UTC: ['0 23 * * *', '30 23 * * *', '0 0 * * *'],
+  MORNING_CRON_UTC: ['*/30 23 * * *', '0 0 * * *'],
   EVENING_PREVIEW_CRON_UTC: '0 12 * * *',
   ADMIN_REPORT_CRON_UTC: '5 12 * * *',
   REMINDER_CRON_UTC: '*/2 * * * *',
