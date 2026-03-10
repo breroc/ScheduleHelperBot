@@ -134,15 +134,13 @@ export function formatMorningMessage(language, payload) {
     const presentation = getWeatherPresentation(weather.code, language);
     const advice = getWeatherAdvice(weather, language);
 
-    lines.push(`${t(language, 'weather.title')}`);
-    lines.push(`🌡 ${weather.temperature}°C`);
-    lines.push(`${presentation.emoji} ${escapeHtml(presentation.text)}`);
+    lines.push(`${t(language, 'weather.title')} ${weather.temperature}°C, ${presentation.emoji} ${escapeHtml(presentation.text)}`);
     lines.push(advice);
     lines.push('');
   }
 
   if (typeof firstClassIn === 'number' && firstClassIn >= 0) {
-    lines.push(t(language, 'schedule.firstClassIn', {
+    lines.push(t(language, 'morning.nearestClassIn', {
       time: minutesToHuman(firstClassIn, language)
     }));
   }
@@ -164,7 +162,7 @@ export function formatMorningMessage(language, payload) {
     return lines.join('\n');
   }
 
-  lines.push(formatDigestLessonBlocks(lessons));
+  lines.push(formatMorningLessonLines(lessons));
 
   return lines.join('\n');
 }
@@ -403,6 +401,17 @@ function formatDigestLessonBlocks(lessons) {
   return lessons
     .map((lesson, index) => formatWeekLessonBlock(lesson, index))
     .join('\n\n');
+}
+
+function formatMorningLessonLines(lessons) {
+  return lessons
+    .map((lesson, index) => {
+      const prefix = lessonBadge(lesson, index);
+      const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
+      const subject = escapeHtml(lesson.subject || '-');
+      return `${prefix} ${range} — ${subject}`;
+    })
+    .join('\n');
 }
 
 function formatSettingsText(language, user, titleKey) {
