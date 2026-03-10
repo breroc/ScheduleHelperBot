@@ -556,5 +556,185 @@ export const STATIC_SCHEDULE = [
     classroom: '31-110',
     start_time: '14:45',
     end_time: '16:15'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading & Writing',
+    teacher: 'Wang Jiayin',
+    classroom: 'J7-304',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading & Writing',
+    teacher: 'Wang Jiayin',
+    classroom: 'J7-304',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'tuesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Speaking II',
+    teacher: 'Zhu Jieling',
+    classroom: 'J7-304',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading & Writing',
+    teacher: 'Wang Jiayin',
+    classroom: 'J7-304',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Reading II',
+    teacher: 'Xu Ying',
+    classroom: 'J7-304',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading & Writing',
+    teacher: 'Wang Jiayin',
+    classroom: 'J7-304',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Speaking II',
+    teacher: 'Zhu Jieling',
+    classroom: 'J7-304',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading II',
+    teacher: 'Xu Ying',
+    classroom: 'J7-304',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '5-2',
+    day_of_week: 'friday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Speaking II',
+    teacher: 'Zhu Jieling',
+    classroom: 'J7-304',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Advanced Chinese Reading & Writing',
+    teacher: 'Chen Jiahong',
+    classroom: 'J7-302',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Advanced Chinese Reading',
+    teacher: 'Huang Xiaofang',
+    classroom: 'J7-302',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Advanced Chinese Speaking',
+    teacher: 'Chen Qin',
+    classroom: 'J7-302',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'tuesday',
+    lesson_number: 2,
+    subject: 'Advanced Chinese Reading & Writing',
+    teacher: 'Chen Jiahong',
+    classroom: 'J7-302',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Advanced Chinese Reading',
+    teacher: 'Huang Xiaofang',
+    classroom: 'J7-308',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Advanced Chinese Reading & Writing',
+    teacher: 'Chen Jiahong',
+    classroom: 'J7-308',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Advanced Chinese Speaking',
+    teacher: 'Chen Qin',
+    classroom: 'J7-308',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Advanced Chinese Reading & Writing',
+    teacher: 'Chen Jiahong',
+    classroom: 'J7-308',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '6-2',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Advanced Chinese Reading & Writing',
+    teacher: 'Chen Jiahong',
+    classroom: 'J7-308',
+    start_time: '08:00',
+    end_time: '09:30'
   }
 ];
