@@ -108,6 +108,96 @@ export const STATIC_SCHEDULE = [
     end_time: '16:15'
   },
   {
+    group_name: '3-6',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Intensive Reading III',
+    teacher: 'Huang Xiaofang',
+    classroom: '31-117',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Speaking III',
+    teacher: 'Wu Muhui',
+    classroom: '31-117',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Reading III',
+    teacher: 'Ren Shan',
+    classroom: '31-117',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'tuesday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Intensive Reading III',
+    teacher: 'Huang Xiaofang',
+    classroom: '31-117',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Listening III',
+    teacher: 'Li Jia',
+    classroom: '31-117',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Speaking III',
+    teacher: 'Wu Muhui',
+    classroom: '31-117',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Reading III',
+    teacher: 'Ren Shan',
+    classroom: '31-117',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Intensive Reading III',
+    teacher: 'Huang Xiaofang',
+    classroom: '31-117',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '3-6',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Intensive Reading III',
+    teacher: 'Huang Xiaofang',
+    classroom: '31-117',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
     group_name: '2-8',
     day_of_week: 'monday',
     lesson_number: 1,

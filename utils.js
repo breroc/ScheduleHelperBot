@@ -2,7 +2,7 @@ import { t } from './translations.js';
 
 export const CONFIG = Object.freeze({
   TIMEZONE: 'Asia/Shanghai',
-  GROUPS: ['2-4', '2-6', '2-7', '2-8', '3-4', '4-6', '4-7', '5-2', '6-2'],
+  GROUPS: ['2-4', '2-6', '2-7', '2-8', '3-4', '3-6', '4-6', '4-7', '5-2', '6-2'],
   DEFAULT_LANGUAGE: 'en',
   DEFAULT_REMINDER_MINUTES: 10,
   DEFAULT_MORNING_TIME: '07:00',
