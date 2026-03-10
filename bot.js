@@ -85,6 +85,12 @@ export async function handleUpdate(update, env) {
     return;
   }
 
+  const favoriteViewChoice = parseFavoriteViewChoice(text);
+  if (favoriteViewChoice) {
+    await onFavoriteQuickView({ env, chatId, user, language, ...favoriteViewChoice });
+    return;
+  }
+
   if (CONFIG.GROUPS.includes(text)) {
     const wasSelected = Boolean(user.group_name);
     await setUserGroup(env.DB, chatId, text);
@@ -122,7 +128,10 @@ export async function handleUpdate(update, env) {
     case 'notifications':
       await sendNotificationPrompt(env, chatId, language);
       return;
-    case 'favorites':
+    case 'favoritesView':
+      await sendFavoritesViewPrompt(env, chatId, language, user);
+      return;
+    case 'favoritesManage':
       await sendFavoritesPrompt(env, chatId, language, user);
       return;
     case 'morningTime':
@@ -667,6 +676,41 @@ async function onFavoriteToggle({ env, chatId, user, language, groupName }) {
   });
 }
 
+async function onFavoriteQuickView({ env, chatId, user, language, groupName, viewType }) {
+  const favoriteGroups = Array.isArray(user?.favorite_groups) ? user.favorite_groups : [];
+  if (!favoriteGroups.includes(groupName)) {
+    await sendFavoritesViewPrompt(env, chatId, language, user);
+    return;
+  }
+
+  if (viewType === 'today') {
+    const now = getNowContext(new Date(), CONFIG.TIMEZONE);
+    const lessons = await getLessonsByGroupAndWeekday(env.DB, groupName, now.zoned.weekday);
+    const text = prependQuickGroupHeader(language, groupName, formatScheduleForToday(language, lessons, now.nowMinutes));
+    await sendMessage(env, chatId, text, {
+      reply_markup: favoritesViewKeyboard(language, favoriteGroups)
+    });
+    return;
+  }
+
+  if (viewType === 'tomorrow') {
+    const tomorrow = addDays(new Date(), 1);
+    const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
+    const lessons = await getLessonsByGroupAndWeekday(env.DB, groupName, parts.weekday);
+    const text = prependQuickGroupHeader(language, groupName, formatScheduleForTomorrow(language, lessons));
+    await sendMessage(env, chatId, text, {
+      reply_markup: favoritesViewKeyboard(language, favoriteGroups)
+    });
+    return;
+  }
+
+  const lessons = await getWeekLessonsByGroup(env.DB, groupName);
+  const text = prependQuickGroupHeader(language, groupName, formatFullWeek(language, lessons));
+  await sendMessage(env, chatId, text, {
+    reply_markup: favoritesViewKeyboard(language, favoriteGroups)
+  });
+}
+
 function detectAction(text) {
   if (matchesMenuLabel(text, 'today')) {
     return 'today';
@@ -689,8 +733,11 @@ function detectAction(text) {
   if (matchesMenuLabel(text, 'notifications')) {
     return 'notifications';
   }
-  if (matchesMenuLabel(text, 'favorites')) {
-    return 'favorites';
+  if (matchesMenuLabel(text, 'favoritesView')) {
+    return 'favoritesView';
+  }
+  if (matchesMenuLabel(text, 'favoritesManage')) {
+    return 'favoritesManage';
   }
   if (matchesMenuLabel(text, 'morningTime')) {
     return 'morningTime';
@@ -797,6 +844,20 @@ async function sendFavoritesPrompt(env, chatId, language, user) {
   });
 }
 
+async function sendFavoritesViewPrompt(env, chatId, language, user) {
+  const favoriteGroups = Array.isArray(user?.favorite_groups) ? user.favorite_groups : [];
+  if (!favoriteGroups.length) {
+    await sendMessage(env, chatId, t(language, 'settings.noFavoritesView'), {
+      reply_markup: mainMenuKeyboard(language)
+    });
+    return;
+  }
+
+  await sendMessage(env, chatId, t(language, 'common.pickFavoriteView'), {
+    reply_markup: favoritesViewKeyboard(language, favoriteGroups)
+  });
+}
+
 async function sendMorningTimePrompt(env, chatId, language, user) {
   const currentValue = user?.morning_time || CONFIG.DEFAULT_MORNING_TIME;
   const text = `${t(language, 'common.pickMorningTime')}\n\n${t(language, 'settings.morningTime')}: <b>${escapeHtml(currentValue)}</b>`;
@@ -811,7 +872,7 @@ export function mainMenuKeyboard(language) {
     keyboard: [
       [menu.today, menu.tomorrow],
       [menu.fullWeek, menu.nextClass],
-      [menu.settings]
+      [menu.favoritesView, menu.settings]
     ],
     resize_keyboard: true
   };
@@ -822,7 +883,7 @@ function settingsKeyboard(language) {
   return {
     keyboard: [
       [menu.language, menu.notifications],
-      [menu.favorites, menu.morningTime],
+      [menu.favoritesManage, menu.morningTime],
       [menu.mySettings, menu.changeGroup],
       [menu.morningToggle],
       [menu.back]
@@ -858,6 +919,21 @@ function favoritesKeyboard(language, favoriteGroups = []) {
     rows.push(
       CONFIG.GROUPS.slice(index, index + 2).map((groupName) => `${favorites.has(groupName) ? '✅' : '⭐'} ${groupName}`)
     );
+  }
+
+  return {
+    keyboard: [...rows, [menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function favoritesViewKeyboard(language, favoriteGroups = []) {
+  const menu = getLocale(language).menu;
+  const rows = [];
+
+  for (const groupName of favoriteGroups) {
+    rows.push([`📅 ${groupName}`, `📆 ${groupName}`]);
+    rows.push([`📖 ${groupName}`]);
   }
 
   return {
@@ -933,4 +1009,25 @@ function parseFavoriteGroupChoice(text) {
   const matched = String(text ?? '').trim().match(/^(?:✅|⭐)\s*(.+)$/);
   const groupName = matched?.[1]?.trim() ?? '';
   return CONFIG.GROUPS.includes(groupName) ? groupName : null;
+}
+
+function parseFavoriteViewChoice(text) {
+  const matched = String(text ?? '').trim().match(/^(📅|📆|📖)\s+(.+)$/);
+  const icon = matched?.[1] ?? '';
+  const groupName = matched?.[2]?.trim() ?? '';
+  if (!CONFIG.GROUPS.includes(groupName)) {
+    return null;
+  }
+
+  if (icon === '📅') {
+    return { groupName, viewType: 'today' };
+  }
+  if (icon === '📆') {
+    return { groupName, viewType: 'tomorrow' };
+  }
+  if (icon === '📖') {
+    return { groupName, viewType: 'week' };
+  }
+
+  return null;
 }

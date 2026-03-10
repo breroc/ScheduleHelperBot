@@ -5,10 +5,11 @@ const TRANSLATIONS = {
       tomorrow: '📆 Tomorrow',
       fullWeek: '📖 Full week',
       nextClass: '📚 Next class',
+      favoritesView: '⭐ Favorites',
       settings: '⚙️ Settings',
       language: '🌐 Language',
       notifications: '🔔 Notifications',
-      favorites: '⭐ Favorites',
+      favoritesManage: '⭐ Manage favorites',
       morningTime: '🕗 Morning time',
       morningToggle: '🌅 Daily updates',
       mySettings: '🧾 My settings',
@@ -28,6 +29,7 @@ const TRANSLATIONS = {
       pickLanguage: 'Choose language:',
       pickNotifications: 'Choose reminder settings:',
       pickFavorites: 'Toggle up to 2 favorite groups:',
+      pickFavoriteView: 'Choose a favorite group view:',
       pickMorningTime: 'Choose morning message time:',
       invalidGroup: '❌ Unknown group. Available groups: {groups}',
       todayUsage: 'Usage: <code>/today 2-8</code>',
@@ -78,6 +80,7 @@ const TRANSLATIONS = {
       disabled: 'Off',
       notSelected: 'Not selected',
       noFavorites: 'Not selected',
+      noFavoritesView: '⭐ No favorite groups yet. Add them in settings first.',
       favoritesUpdated: '⭐ Favorites updated: <b>{value}</b>',
       favoritesLimit: '⚠️ You can pin up to 2 favorite groups.',
       morningTimeUpdated: '🕗 Morning time updated: <b>{value}</b>'
@@ -139,7 +142,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Help</b>',
-      body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n⭐ Favorites\n🕗 Morning time\n🧾 My settings\n🔄 Change group\n🌅 Daily updates',
+      body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⭐ Favorites\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n⭐ Manage favorites\n🕗 Morning time\n🧾 My settings\n🔄 Change group\n🌅 Daily updates',
       admin: '\n\nAdmin:\n/stats - bot stats\n/broadcast text - send to all users\n/broadcastgroup 2-7 text - send to one group'
     },
     weekdays: {
@@ -162,10 +165,11 @@ const TRANSLATIONS = {
       tomorrow: '📆 Завтра',
       fullWeek: '📖 Вся неделя',
       nextClass: '📚 Следующая пара',
+      favoritesView: '⭐ Избранное',
       settings: '⚙️ Настройки',
       language: '🌐 Язык',
       notifications: '🔔 Уведомления',
-      favorites: '⭐ Избранное',
+      favoritesManage: '⭐ Настроить избранное',
       morningTime: '🕗 Время утра',
       morningToggle: '🌅 Ежедневные сообщения',
       mySettings: '🧾 Мои настройки',
@@ -185,6 +189,7 @@ const TRANSLATIONS = {
       pickLanguage: 'Выберите язык:',
       pickNotifications: 'Выберите настройки напоминаний:',
       pickFavorites: 'Выберите до 2 избранных групп:',
+      pickFavoriteView: 'Выберите просмотр избранной группы:',
       pickMorningTime: 'Выберите время утреннего сообщения:',
       invalidGroup: '❌ Неизвестная группа. Доступные группы: {groups}',
       todayUsage: 'Использование: <code>/today 2-8</code>',
@@ -235,6 +240,7 @@ const TRANSLATIONS = {
       disabled: 'Выкл',
       notSelected: 'Не выбрана',
       noFavorites: 'Не выбрано',
+      noFavoritesView: '⭐ У вас пока нет избранных групп. Добавьте их сначала в настройках.',
       favoritesUpdated: '⭐ Избранное обновлено: <b>{value}</b>',
       favoritesLimit: '⚠️ Можно закрепить не больше 2 групп.',
       morningTimeUpdated: '🕗 Время утра обновлено: <b>{value}</b>'
@@ -296,7 +302,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Помощь</b>',
-      body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n⭐ Избранное\n🕗 Время утра\n🧾 Мои настройки\n🔄 Сменить группу\n🌅 Ежедневные сообщения',
+      body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - настроить избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⭐ Избранное\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n⭐ Настроить избранное\n🕗 Время утра\n🧾 Мои настройки\n🔄 Сменить группу\n🌅 Ежедневные сообщения',
       admin: '\n\nАдмин:\n/stats - статистика\n/broadcast текст - рассылка всем\n/broadcastgroup 2-7 текст - рассылка одной группе'
     },
     weekdays: {
