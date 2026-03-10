@@ -66,7 +66,7 @@ export function formatFullWeek(language, lessons) {
 
     const dayTitle = `<b>${escapeHtml(t(language, `weekdays.${weekday}`))}</b>`;
     const lessonBlocks = dayLessons.map((lesson, index) => formatWeekLessonBlock(lesson, index));
-    dayBlocks.push(`${dayTitle}\n\n${lessonBlocks.join('\n\n')}`);
+    dayBlocks.push(`${dayTitle}\n\n${lessonBlocks.join('\n')}`);
   }
 
   if (!dayBlocks.length) {
