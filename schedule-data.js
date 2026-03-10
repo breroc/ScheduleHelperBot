@@ -466,5 +466,95 @@ export const STATIC_SCHEDULE = [
     classroom: '31-116',
     start_time: '10:00',
     end_time: '11:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Chinese Listening',
+    teacher: 'Chen Yifan',
+    classroom: '31-110',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Chinese Reading',
+    teacher: 'Cheng Fang',
+    classroom: '31-110',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Chinese Writing',
+    teacher: 'Zhu Yaqin',
+    classroom: '31-116',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Chinese Speaking',
+    teacher: 'Dong Yifan',
+    classroom: '31-110',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Chinese Reading',
+    teacher: 'Chen Fang',
+    classroom: '31-110',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Chinese Listening',
+    teacher: 'Cheng Fang',
+    classroom: '31-110',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Chinese Writing',
+    teacher: 'Chen Yifan',
+    classroom: '31-110',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Chinese Speaking',
+    teacher: 'Dong Yifan',
+    classroom: '31-110',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-7',
+    day_of_week: 'friday',
+    lesson_number: 2,
+    subject: 'Chinese Reading',
+    teacher: 'Chen Fang',
+    classroom: '31-110',
+    start_time: '14:45',
+    end_time: '16:15'
   }
 ];
