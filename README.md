@@ -3,9 +3,11 @@
 Production-like Telegram schedule bot on **Cloudflare Workers** with these features:
 - group selection (`2-6`, `2-7`, `2-8`, `3-4`, `4-6`, `4-7`, `5-2`, `6-2`)
 - today / tomorrow / full week / next class
-- quick group command `/today 2-8` (without changing your selected group)
+- quick group commands `/today 2-8`, `/tomorrow 2-8`, `/week 2-8`
 - RU/EN language
 - reminder settings (5 min / 10 min / off)
+- pinned favorite groups
+- custom morning message time (`07:00`, `07:30`, `08:00`)
 - my settings
 - admin broadcast and stats
 - `/help` command with all functions
@@ -44,6 +46,8 @@ Configured in `wrangler.jsonc`:
 - D1 binding name `DB`
 - cron triggers:
   - `0 23 * * *` (07:00 Asia/Shanghai morning message)
+  - `30 23 * * *` (07:30 Asia/Shanghai morning message)
+  - `0 0 * * *` (08:00 Asia/Shanghai morning message)
   - `0 12 * * *` (20:00 Asia/Shanghai tomorrow preview)
   - `5 12 * * *` (20:05 Asia/Shanghai daily admin report)
   - `*/2 * * * *` (upcoming reminders)
@@ -58,6 +62,8 @@ ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en';
 ALTER TABLE users ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN reminder_minutes INTEGER NOT NULL DEFAULT 10;
 ALTER TABLE users ADD COLUMN morning_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN favorite_groups TEXT;
+ALTER TABLE users ADD COLUMN morning_time TEXT NOT NULL DEFAULT '07:00';
 ALTER TABLE users ADD COLUMN last_morning_sent TEXT;
 ALTER TABLE users ADD COLUMN last_reminder_key TEXT;
 ALTER TABLE users ADD COLUMN last_evening_sent TEXT;
@@ -112,8 +118,8 @@ All schedule logic is calculated in `Asia/Shanghai`:
 
 ## Cron behavior
 
-### Morning cron (`0 23 * * *` UTC)
-At 07:00 Shanghai local time bot sends:
+### Morning cron (`0 23 * * *`, `30 23 * * *`, `0 0 * * *` UTC)
+At `07:00`, `07:30`, or `08:00` Shanghai local time bot sends:
 - greeting
 - Hangzhou weather (Open-Meteo)
 - weather advice
@@ -166,6 +172,8 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 - `/broadcastgroup <group> <text>` - sends message to one group
 - `/stats` - total users, users by group, enabled notifications + today's delivery stats
 - `/today <group>` - quick one-time today schedule for any supported group
+- `/tomorrow <group>` - quick one-time tomorrow schedule for any supported group
+- `/week <group>` - quick one-time full week for any supported group
 - `/help` - command/help overview
 
 Only `ADMIN_ID` can use these commands.

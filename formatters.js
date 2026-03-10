@@ -426,13 +426,19 @@ function formatSettingsText(language, user, titleKey) {
     ? `${user.reminder_minutes} min`
     : t(language, 'settings.disabled');
   const group = user.group_name || t(language, 'settings.notSelected');
+  const favorites = Array.isArray(user.favorite_groups) && user.favorite_groups.length
+    ? user.favorite_groups.join(', ')
+    : t(language, 'settings.noFavorites');
   const languageLabel = user.language === 'ru' ? 'Русский' : 'English';
+  const morningTime = user.morning_time || '07:00';
 
   return `${t(language, titleKey)}\n\n` +
     `${t(language, 'settings.group')}: <b>${escapeHtml(group)}</b>\n` +
+    `${t(language, 'settings.favorites')}: <b>${escapeHtml(favorites)}</b>\n` +
     `${t(language, 'settings.language')}: <b>${escapeHtml(languageLabel)}</b>\n` +
     `${t(language, 'settings.notifications')}: <b>${escapeHtml(notificationsState)}</b>\n` +
     `${t(language, 'settings.reminder')}: <b>${escapeHtml(reminder)}</b>\n` +
+    `${t(language, 'settings.morningTime')}: <b>${escapeHtml(morningTime)}</b>\n` +
     `${t(language, 'settings.morning')}: <b>${escapeHtml(morningState)}</b>`;
 }
 

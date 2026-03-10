@@ -7,8 +7,10 @@ import {
   getUser,
   getUsersByGroup,
   setUserGroup,
+  setUserFavoriteGroups,
   setUserLanguage,
   setUserMorningEnabled,
+  setUserMorningTime,
   setUserNotifications,
   getWeekLessonsByGroup
 } from './db.js';
@@ -34,6 +36,7 @@ import {
   getAdminId,
   getNowContext,
   getZonedDateParts,
+  parseMorningTimeChoice,
   parseReminderChoice,
   parseTimeToMinutes,
   pickLanguageByTelegram,
@@ -76,6 +79,12 @@ export async function handleUpdate(update, env) {
     return;
   }
 
+  const favoriteGroupChoice = parseFavoriteGroupChoice(text);
+  if (favoriteGroupChoice) {
+    await onFavoriteToggle({ env, chatId, user, language, groupName: favoriteGroupChoice });
+    return;
+  }
+
   if (CONFIG.GROUPS.includes(text)) {
     const wasSelected = Boolean(user.group_name);
     await setUserGroup(env.DB, chatId, text);
@@ -112,6 +121,12 @@ export async function handleUpdate(update, env) {
       return;
     case 'notifications':
       await sendNotificationPrompt(env, chatId, language);
+      return;
+    case 'favorites':
+      await sendFavoritesPrompt(env, chatId, language, user);
+      return;
+    case 'morningTime':
+      await sendMorningTimePrompt(env, chatId, language, user);
       return;
     case 'morningToggle':
       await onMorningToggle({ env, chatId, user, language });
@@ -167,6 +182,19 @@ export async function handleUpdate(update, env) {
       }
       break;
     }
+    case 'morningTimeChoice': {
+      const choice = parseMorningTimeChoice(text);
+      if (choice) {
+        await setUserMorningTime(env.DB, chatId, choice);
+        user = {
+          ...user,
+          morning_time: choice
+        };
+        await sendSettingsText(env, chatId, language, t(language, 'settings.morningTimeUpdated', { value: choice }));
+        return;
+      }
+      break;
+    }
     default:
       break;
   }
@@ -214,12 +242,12 @@ async function handleCommand({ text, chatId, env, user, language }) {
   }
 
   if (command === '/tomorrow') {
-    await onTomorrow({ env, chatId, user, language });
+    await onTomorrowCommand({ env, chatId, user, language, argsText });
     return;
   }
 
   if (command === '/week' || command === '/fullweek') {
-    await onFullWeek({ env, chatId, user, language });
+    await onWeekCommand({ env, chatId, user, language, argsText });
     return;
   }
 
@@ -243,8 +271,18 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
+  if (command === '/favorites') {
+    await onFavoritesCommand({ env, chatId, user, language, argsText });
+    return;
+  }
+
   if (command === '/morning') {
     await onMorningToggle({ env, chatId, user, language });
+    return;
+  }
+
+  if (command === '/morningtime') {
+    await onMorningTimeCommand({ env, chatId, user, language, argsText });
     return;
   }
 
@@ -285,8 +323,7 @@ async function onToday({ env, chatId, user, language }) {
 }
 
 async function onTodayCommand({ env, chatId, user, language, argsText }) {
-  const candidate = String(argsText || '').trim().split(/\s+/).filter(Boolean)[0] ?? '';
-  const requestedGroup = candidate ? candidate : null;
+  const requestedGroup = parseRequestedGroupArg(argsText);
 
   if (requestedGroup && !CONFIG.GROUPS.includes(requestedGroup)) {
     await sendMessage(
@@ -315,6 +352,37 @@ async function onTodayCommand({ env, chatId, user, language, argsText }) {
   await sendMainMenu(env, chatId, language, text);
 }
 
+async function onTomorrowCommand({ env, chatId, user, language, argsText }) {
+  const requestedGroup = parseRequestedGroupArg(argsText);
+
+  if (requestedGroup && !CONFIG.GROUPS.includes(requestedGroup)) {
+    await sendMessage(
+      env,
+      chatId,
+      `${t(language, 'common.invalidGroup', { groups: CONFIG.GROUPS.join(', ') })}\n${t(language, 'common.tomorrowUsage')}`,
+      { reply_markup: mainMenuKeyboard(language) }
+    );
+    return;
+  }
+
+  const targetGroup = requestedGroup || user.group_name;
+  if (!targetGroup) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const tomorrow = addDays(new Date(), 1);
+  const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, targetGroup, parts.weekday);
+  let text = formatScheduleForTomorrow(language, lessons);
+
+  if (requestedGroup) {
+    text = prependQuickGroupHeader(language, targetGroup, text);
+  }
+
+  await sendMainMenu(env, chatId, language, text);
+}
+
 async function onTomorrow({ env, chatId, user, language }) {
   if (!user.group_name) {
     await sendNoGroupSelected(env, chatId, language);
@@ -326,6 +394,35 @@ async function onTomorrow({ env, chatId, user, language }) {
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, parts.weekday);
 
   await sendMainMenu(env, chatId, language, formatScheduleForTomorrow(language, lessons));
+}
+
+async function onWeekCommand({ env, chatId, user, language, argsText }) {
+  const requestedGroup = parseRequestedGroupArg(argsText);
+
+  if (requestedGroup && !CONFIG.GROUPS.includes(requestedGroup)) {
+    await sendMessage(
+      env,
+      chatId,
+      `${t(language, 'common.invalidGroup', { groups: CONFIG.GROUPS.join(', ') })}\n${t(language, 'common.weekUsage')}`,
+      { reply_markup: mainMenuKeyboard(language) }
+    );
+    return;
+  }
+
+  const targetGroup = requestedGroup || user.group_name;
+  if (!targetGroup) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const lessons = await getWeekLessonsByGroup(env.DB, targetGroup);
+  let text = formatFullWeek(language, lessons);
+
+  if (requestedGroup) {
+    text = prependQuickGroupHeader(language, targetGroup, text);
+  }
+
+  await sendMainMenu(env, chatId, language, text);
 }
 
 async function onFullWeek({ env, chatId, user, language }) {
@@ -482,6 +579,53 @@ async function onHelp({ env, chatId, language }) {
   await sendMainMenu(env, chatId, language, formatHelp(language, isAdmin(chatId, env)));
 }
 
+async function onFavoritesCommand({ env, chatId, user, language, argsText }) {
+  const groups = String(argsText || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!groups.length) {
+    await sendFavoritesPrompt(env, chatId, language, user);
+    return;
+  }
+
+  if (groups.some((groupName) => !CONFIG.GROUPS.includes(groupName))) {
+    await sendMessage(
+      env,
+      chatId,
+      `${t(language, 'common.invalidGroup', { groups: CONFIG.GROUPS.join(', ') })}\n${t(language, 'common.favoritesUsage')}`,
+      {
+        reply_markup: favoritesKeyboard(language, user.favorite_groups ?? [])
+      }
+    );
+    return;
+  }
+
+  if ([...new Set(groups)].length > 2) {
+    await sendMessage(env, chatId, t(language, 'settings.favoritesLimit'), {
+      reply_markup: favoritesKeyboard(language, user.favorite_groups ?? [])
+    });
+    return;
+  }
+
+  const favoriteGroups = [...new Set(groups)].slice(0, 2);
+  await setUserFavoriteGroups(env.DB, chatId, favoriteGroups);
+  const value = favoriteGroups.length ? favoriteGroups.join(', ') : t(language, 'settings.noFavorites');
+  await sendSettingsText(env, chatId, language, t(language, 'settings.favoritesUpdated', { value }));
+}
+
+async function onMorningTimeCommand({ env, chatId, user, language, argsText }) {
+  const choice = parseMorningTimeChoice(argsText);
+  if (!choice) {
+    await sendMorningTimePrompt(env, chatId, language, user);
+    return;
+  }
+
+  await setUserMorningTime(env.DB, chatId, choice);
+  await sendSettingsText(env, chatId, language, t(language, 'settings.morningTimeUpdated', { value: choice }));
+}
+
 async function onMorningToggle({ env, chatId, user, language }) {
   const nextValue = Number(user?.morning_enabled) === 1 ? 0 : 1;
   await setUserMorningEnabled(env.DB, chatId, nextValue);
@@ -495,6 +639,32 @@ async function onMorningToggle({ env, chatId, user, language }) {
     : t(freshLanguage, 'settings.disabled');
 
   await sendSettingsText(env, chatId, freshLanguage, t(freshLanguage, 'settings.morningUpdated', { value }));
+}
+
+async function onFavoriteToggle({ env, chatId, user, language, groupName }) {
+  const currentFavorites = Array.isArray(user.favorite_groups) ? [...user.favorite_groups] : [];
+  const hasGroup = currentFavorites.includes(groupName);
+  let nextFavorites = currentFavorites;
+
+  if (hasGroup) {
+    nextFavorites = currentFavorites.filter((item) => item !== groupName);
+  } else {
+    if (currentFavorites.length >= 2) {
+      await sendMessage(env, chatId, t(language, 'settings.favoritesLimit'), {
+        reply_markup: favoritesKeyboard(language, currentFavorites)
+      });
+      return;
+    }
+    nextFavorites = [...currentFavorites, groupName];
+  }
+
+  await setUserFavoriteGroups(env.DB, chatId, nextFavorites);
+  user.favorite_groups = nextFavorites;
+  const value = nextFavorites.length ? nextFavorites.join(', ') : t(language, 'settings.noFavorites');
+
+  await sendMessage(env, chatId, t(language, 'settings.favoritesUpdated', { value }), {
+    reply_markup: favoritesKeyboard(language, nextFavorites)
+  });
 }
 
 function detectAction(text) {
@@ -519,6 +689,12 @@ function detectAction(text) {
   if (matchesMenuLabel(text, 'notifications')) {
     return 'notifications';
   }
+  if (matchesMenuLabel(text, 'favorites')) {
+    return 'favorites';
+  }
+  if (matchesMenuLabel(text, 'morningTime')) {
+    return 'morningTime';
+  }
   if (matchesMenuLabel(text, 'morningToggle')) {
     return 'morningToggle';
   }
@@ -541,6 +717,9 @@ function detectAction(text) {
 
   if (parseReminderChoice(text)) {
     return 'notifChoice';
+  }
+  if (parseMorningTimeChoice(text)) {
+    return 'morningTimeChoice';
   }
 
   return 'unknown';
@@ -607,6 +786,25 @@ async function sendNotificationPrompt(env, chatId, language) {
   });
 }
 
+async function sendFavoritesPrompt(env, chatId, language, user) {
+  const favorites = Array.isArray(user?.favorite_groups) && user.favorite_groups.length
+    ? user.favorite_groups.join(', ')
+    : t(language, 'settings.noFavorites');
+
+  const text = `${t(language, 'common.pickFavorites')}\n\n${t(language, 'settings.favorites')}: <b>${escapeHtml(favorites)}</b>`;
+  await sendMessage(env, chatId, text, {
+    reply_markup: favoritesKeyboard(language, user?.favorite_groups ?? [])
+  });
+}
+
+async function sendMorningTimePrompt(env, chatId, language, user) {
+  const currentValue = user?.morning_time || CONFIG.DEFAULT_MORNING_TIME;
+  const text = `${t(language, 'common.pickMorningTime')}\n\n${t(language, 'settings.morningTime')}: <b>${escapeHtml(currentValue)}</b>`;
+  await sendMessage(env, chatId, text, {
+    reply_markup: morningTimeKeyboard(language, currentValue)
+  });
+}
+
 export function mainMenuKeyboard(language) {
   const menu = getLocale(language).menu;
   return {
@@ -624,6 +822,7 @@ function settingsKeyboard(language) {
   return {
     keyboard: [
       [menu.language, menu.notifications],
+      [menu.favorites, menu.morningTime],
       [menu.mySettings, menu.changeGroup],
       [menu.morningToggle],
       [menu.back]
@@ -646,6 +845,38 @@ function notificationsKeyboard(language) {
   const labels = getLocale(language).labels;
   return {
     keyboard: [['5 min', '10 min'], [labels.off, menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function favoritesKeyboard(language, favoriteGroups = []) {
+  const menu = getLocale(language).menu;
+  const favorites = new Set(Array.isArray(favoriteGroups) ? favoriteGroups : []);
+  const rows = [];
+
+  for (let index = 0; index < CONFIG.GROUPS.length; index += 2) {
+    rows.push(
+      CONFIG.GROUPS.slice(index, index + 2).map((groupName) => `${favorites.has(groupName) ? '✅' : '⭐'} ${groupName}`)
+    );
+  }
+
+  return {
+    keyboard: [...rows, [menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function morningTimeKeyboard(language, currentValue) {
+  const menu = getLocale(language).menu;
+  const options = CONFIG.MORNING_TIME_OPTIONS;
+  const rows = [];
+
+  for (let index = 0; index < options.length; index += 2) {
+    rows.push(options.slice(index, index + 2).map((value) => (value === currentValue ? `✅ ${value}` : value)));
+  }
+
+  return {
+    keyboard: [...rows, [menu.back]],
     resize_keyboard: true
   };
 }
@@ -691,4 +922,15 @@ async function notifyAdminAboutNewUser(env, message) {
   } catch (error) {
     console.error('new_user_admin_notify_error', { adminId, chatId, error: String(error) });
   }
+}
+
+function parseRequestedGroupArg(argsText) {
+  const candidate = String(argsText || '').trim().split(/\s+/).filter(Boolean)[0] ?? '';
+  return candidate || null;
+}
+
+function parseFavoriteGroupChoice(text) {
+  const matched = String(text ?? '').trim().match(/^(?:✅|⭐)\s*(.+)$/);
+  const groupName = matched?.[1]?.trim() ?? '';
+  return CONFIG.GROUPS.includes(groupName) ? groupName : null;
 }

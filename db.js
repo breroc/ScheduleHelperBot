@@ -27,6 +27,14 @@ const USER_COLUMN_MIGRATIONS = [
     sql: 'ALTER TABLE users ADD COLUMN morning_enabled INTEGER NOT NULL DEFAULT 1'
   },
   {
+    name: 'favorite_groups',
+    sql: 'ALTER TABLE users ADD COLUMN favorite_groups TEXT'
+  },
+  {
+    name: 'morning_time',
+    sql: `ALTER TABLE users ADD COLUMN morning_time TEXT NOT NULL DEFAULT '${CONFIG.DEFAULT_MORNING_TIME}'`
+  },
+  {
     name: 'last_morning_sent',
     sql: 'ALTER TABLE users ADD COLUMN last_morning_sent TEXT'
   },
@@ -158,10 +166,12 @@ export async function getUser(db, chatId) {
   return {
     chat_id: Number(user.chat_id),
     group_name: user.group_name ?? null,
+    favorite_groups: parseFavoriteGroups(user.favorite_groups),
     language: user.language ?? CONFIG.DEFAULT_LANGUAGE,
     notifications_enabled: Number(user.notifications_enabled ?? 1),
     reminder_minutes: Number(user.reminder_minutes ?? CONFIG.DEFAULT_REMINDER_MINUTES),
     morning_enabled: Number(user.morning_enabled ?? 1),
+    morning_time: normalizeMorningTime(user.morning_time),
     last_morning_sent: user.last_morning_sent ?? null,
     last_reminder_key: user.last_reminder_key ?? null,
     last_evening_sent: user.last_evening_sent ?? null,
@@ -191,6 +201,13 @@ export async function setUserGroup(db, chatId, groupName) {
   await db.prepare('UPDATE users SET group_name = ? WHERE chat_id = ?').bind(groupName, chatId).run();
 }
 
+export async function setUserFavoriteGroups(db, chatId, favoriteGroups) {
+  await db
+    .prepare('UPDATE users SET favorite_groups = ? WHERE chat_id = ?')
+    .bind(serializeFavoriteGroups(favoriteGroups), chatId)
+    .run();
+}
+
 export async function setUserLanguage(db, chatId, language) {
   await db.prepare('UPDATE users SET language = ? WHERE chat_id = ?').bind(language, chatId).run();
 }
@@ -206,6 +223,13 @@ export async function setUserMorningEnabled(db, chatId, enabled) {
   await db
     .prepare('UPDATE users SET morning_enabled = ? WHERE chat_id = ?')
     .bind(enabled, chatId)
+    .run();
+}
+
+export async function setUserMorningTime(db, chatId, morningTime) {
+  await db
+    .prepare('UPDATE users SET morning_time = ? WHERE chat_id = ?')
+    .bind(normalizeMorningTime(morningTime), chatId)
     .run();
 }
 
@@ -253,7 +277,7 @@ export async function getUsersByGroup(db, groupName) {
 export async function getUsersForMorning(db) {
   const { results } = await db
     .prepare(
-      'SELECT chat_id, group_name, language, morning_enabled, last_morning_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
+      'SELECT * FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
     )
     .all();
 
@@ -262,6 +286,7 @@ export async function getUsersForMorning(db) {
     group_name: row.group_name,
     language: row.language ?? CONFIG.DEFAULT_LANGUAGE,
     morning_enabled: Number(row.morning_enabled ?? 1),
+    morning_time: normalizeMorningTime(row.morning_time),
     last_morning_sent: row.last_morning_sent ?? null
   }));
 }
@@ -654,6 +679,51 @@ function normalizeOptionalText(value) {
   }
   const trimmed = String(value).trim();
   return trimmed ? trimmed : null;
+}
+
+function normalizeMorningTime(value) {
+  const text = normalizeOptionalText(value);
+  if (text && CONFIG.MORNING_TIME_OPTIONS.includes(text)) {
+    return text;
+  }
+  return CONFIG.DEFAULT_MORNING_TIME;
+}
+
+function parseFavoriteGroups(value) {
+  let raw = [];
+
+  if (Array.isArray(value)) {
+    raw = value;
+  } else if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        raw = parsed;
+      }
+    } catch {
+      raw = value.split(',').map((item) => item.trim());
+    }
+  }
+
+  const seen = new Set();
+  const favorites = [];
+  for (const item of raw) {
+    const groupName = normalizeOptionalText(item);
+    if (!groupName || !CONFIG.GROUPS.includes(groupName) || seen.has(groupName)) {
+      continue;
+    }
+    seen.add(groupName);
+    favorites.push(groupName);
+    if (favorites.length >= 2) {
+      break;
+    }
+  }
+
+  return favorites;
+}
+
+function serializeFavoriteGroups(value) {
+  return JSON.stringify(parseFavoriteGroups(value));
 }
 
 async function insertAnnouncement(db, kind, text) {

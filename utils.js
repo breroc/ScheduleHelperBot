@@ -5,9 +5,11 @@ export const CONFIG = Object.freeze({
   GROUPS: ['2-6', '2-7', '2-8', '3-4', '4-6', '4-7', '5-2', '6-2'],
   DEFAULT_LANGUAGE: 'en',
   DEFAULT_REMINDER_MINUTES: 10,
+  DEFAULT_MORNING_TIME: '07:00',
+  MORNING_TIME_OPTIONS: ['07:00', '07:30', '08:00'],
   SEND_BATCH_SIZE: 10,
   SEND_BATCH_PAUSE_MS: 300,
-  MORNING_CRON_UTC: '0 23 * * *',
+  MORNING_CRON_UTC: ['0 23 * * *', '30 23 * * *', '0 0 * * *'],
   EVENING_PREVIEW_CRON_UTC: '0 12 * * *',
   ADMIN_REPORT_CRON_UTC: '5 12 * * *',
   REMINDER_CRON_UTC: '*/2 * * * *',
@@ -139,6 +141,12 @@ export function getDateKey(parts) {
   return `${year}-${month}-${day}`;
 }
 
+export function getClockKey(parts) {
+  const hour = String(parts.hour ?? 0).padStart(2, '0');
+  const minute = String(parts.minute ?? 0).padStart(2, '0');
+  return `${hour}:${minute}`;
+}
+
 export function addDays(date, days) {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
@@ -233,6 +241,15 @@ export function parseReminderChoice(text) {
   }
   if (text === 'Off' || text === 'Выкл') {
     return { enabled: 0, minutes: CONFIG.DEFAULT_REMINDER_MINUTES };
+  }
+  return null;
+}
+
+export function parseMorningTimeChoice(text) {
+  const rawValue = String(text ?? '').trim();
+  const value = rawValue.replace(/^✅\s*/, '');
+  if (CONFIG.MORNING_TIME_OPTIONS.includes(value)) {
+    return value;
   }
   return null;
 }

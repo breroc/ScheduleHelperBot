@@ -21,6 +21,7 @@ import {
   addDays,
   fetchHangzhouWeather,
   getAdminId,
+  getClockKey,
   getNowContext,
   getZonedDateParts,
   parseTimeToMinutes,
@@ -33,8 +34,9 @@ export async function handleScheduled(event, env) {
   const cron = String(event?.cron || '').trim();
   console.log('scheduled_event', { cron });
 
-  if (isCronMatch(cron, CONFIG.MORNING_CRON_UTC)) {
-    await runMorningCron(env);
+  const matchedMorningTime = getMatchedMorningTime(cron);
+  if (matchedMorningTime) {
+    await runMorningCron(env, matchedMorningTime);
     return;
   }
 
@@ -62,15 +64,20 @@ export async function handleScheduled(event, env) {
   });
 }
 
-export async function runMorningCron(env) {
+export async function runMorningCron(env, targetMorningTime = null) {
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const users = await getUsersForMorning(env.DB);
   const weather = await fetchHangzhouWeather();
   const lessonsByGroup = new Map();
   const targets = [];
+  const currentMorningTime = targetMorningTime || getClockKey(now.zoned);
 
   for (const user of users) {
     if (!user.group_name) {
+      continue;
+    }
+
+    if (user.morning_time !== currentMorningTime) {
       continue;
     }
 
@@ -273,7 +280,20 @@ function getMinutesUntilFirstClass(lessons, nowMinutes) {
 }
 
 function isCronMatch(received, target) {
-  return normalizeCron(received) === normalizeCron(target);
+  const normalizedReceived = normalizeCron(received);
+  if (Array.isArray(target)) {
+    return target.some((value) => normalizeCron(value) === normalizedReceived);
+  }
+  return normalizedReceived === normalizeCron(target);
+}
+
+function getMatchedMorningTime(cronExpr) {
+  const cronList = Array.isArray(CONFIG.MORNING_CRON_UTC) ? CONFIG.MORNING_CRON_UTC : [CONFIG.MORNING_CRON_UTC];
+  const index = cronList.findIndex((value) => normalizeCron(value) === normalizeCron(cronExpr));
+  if (index === -1) {
+    return null;
+  }
+  return CONFIG.MORNING_TIME_OPTIONS[index] ?? null;
 }
 
 function countSettledResults(results) {
