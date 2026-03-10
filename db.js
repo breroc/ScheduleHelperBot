@@ -108,10 +108,16 @@ async function tableExists(db, tableName) {
 }
 
 export async function ensureUser(db, chatId, language, botFingerprint = '') {
-  await db
+  const { user } = await ensureUserWithMeta(db, chatId, language, botFingerprint);
+  return user;
+}
+
+export async function ensureUserWithMeta(db, chatId, language, botFingerprint = '') {
+  const insertResult = await db
     .prepare('INSERT INTO users (chat_id, language, bot_fingerprint) VALUES (?, ?, ?) ON CONFLICT(chat_id) DO NOTHING')
     .bind(chatId, language, botFingerprint || null)
     .run();
+  const isNewUser = Number(insertResult?.meta?.changes ?? 0) > 0;
 
   if (botFingerprint) {
     const row = await db
@@ -130,7 +136,11 @@ export async function ensureUser(db, chatId, language, botFingerprint = '') {
     }
   }
 
-  return getUser(db, chatId);
+  const user = await getUser(db, chatId);
+  return {
+    user,
+    isNewUser
+  };
 }
 
 export async function getUser(db, chatId) {

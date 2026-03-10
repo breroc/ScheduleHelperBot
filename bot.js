@@ -1,5 +1,5 @@
 import {
-  ensureUser,
+  ensureUserWithMeta,
   getAllUsers,
   getDailyCronDeliveryStats,
   getLessonsByGroupAndWeekday,
@@ -27,6 +27,7 @@ import { getLocale, resolveLanguage, t } from './translations.js';
 import {
   CONFIG,
   addDays,
+  escapeHtml,
   fetchHangzhouWeather,
   getBotInstanceId,
   getAdminId,
@@ -53,8 +54,13 @@ export async function handleUpdate(update, env) {
   const text = message.text.trim();
   const defaultLang = pickLanguageByTelegram(message.from?.language_code);
   const botInstanceId = getBotInstanceId(env);
-  let user = await ensureUser(env.DB, chatId, defaultLang, botInstanceId);
+  const ensured = await ensureUserWithMeta(env.DB, chatId, defaultLang, botInstanceId);
+  let user = ensured.user;
   let language = resolveLanguage(user?.language ?? defaultLang);
+
+  if (ensured.isNewUser) {
+    await notifyAdminAboutNewUser(env, message);
+  }
 
   if (text.startsWith('/')) {
     await handleCommand({ text, chatId, env, user, language });
@@ -604,4 +610,34 @@ function getMinutesUntilFirstClass(lessons, nowMinutes) {
   }
 
   return null;
+}
+
+async function notifyAdminAboutNewUser(env, message) {
+  const adminId = getAdminId(env);
+  const chatId = Number(message?.chat?.id);
+  if (!Number.isFinite(adminId) || adminId <= 0 || chatId === adminId) {
+    return;
+  }
+
+  const from = message?.from ?? {};
+  const username = from.username ? `@${from.username}` : '-';
+  const firstName = from.first_name ?? '-';
+  const lastName = from.last_name ?? '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  const languageCode = from.language_code ?? '-';
+
+  const text = [
+    '🆕 <b>New user joined bot</b>',
+    '',
+    `🆔 <b>${chatId}</b>`,
+    `👤 ${escapeHtml(fullName || '-')}`,
+    `🔗 ${escapeHtml(username)}`,
+    `🌐 ${escapeHtml(languageCode)}`
+  ].join('\n');
+
+  try {
+    await sendMessage(env, adminId, text);
+  } catch (error) {
+    console.error('new_user_admin_notify_error', { adminId, chatId, error: String(error) });
+  }
 }
