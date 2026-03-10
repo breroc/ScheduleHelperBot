@@ -13,3 +13,6 @@ ALTER TABLE users ADD COLUMN bot_fingerprint TEXT;
 ALTER TABLE users ADD COLUMN tg_username TEXT;
 ALTER TABLE users ADD COLUMN tg_first_name TEXT;
 ALTER TABLE users ADD COLUMN tg_last_name TEXT;
+ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN last_seen_at TEXT;
+ALTER TABLE users ADD COLUMN deactivated_at TEXT;

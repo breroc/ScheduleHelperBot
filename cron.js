@@ -7,6 +7,7 @@ import {
   getUsersForReminders,
   hasAdminDailyReport,
   logCronDelivery,
+  markUserInactive,
   markAdminDailyReport,
   setLastEveningSent,
   setLastMorningSent,
@@ -14,7 +15,7 @@ import {
 } from './db.js';
 import { formatAdminDailyReport, formatEveningPreview, formatMorningMessage, formatReminder } from './formatters.js';
 import { mainMenuKeyboard } from './bot.js';
-import { sendMessage } from './telegram.js';
+import { isTelegramUserUnavailableError, sendMessage } from './telegram.js';
 import { resolveLanguage } from './translations.js';
 import {
   CONFIG,
@@ -108,6 +109,9 @@ export async function runMorningCron(env, targetMorningTime = null) {
       });
       await setLastMorningSent(env.DB, user.chat_id, now.dateKey);
     } catch (error) {
+      if (isTelegramUserUnavailableError(error)) {
+        await markUserInactive(env.DB, user.chat_id);
+      }
       console.error('morning_send_error', { chatId: user.chat_id, error: String(error) });
       throw error;
     }
@@ -162,6 +166,9 @@ export async function runReminderCron(env) {
       });
       await setLastReminderKey(env.DB, user.chat_id, reminderKey);
     } catch (error) {
+      if (isTelegramUserUnavailableError(error)) {
+        await markUserInactive(env.DB, user.chat_id);
+      }
       console.error('reminder_send_error', { chatId: user.chat_id, error: String(error) });
       throw error;
     }
@@ -208,6 +215,9 @@ export async function runEveningPreviewCron(env) {
       });
       await setLastEveningSent(env.DB, user.chat_id, now.dateKey);
     } catch (error) {
+      if (isTelegramUserUnavailableError(error)) {
+        await markUserInactive(env.DB, user.chat_id);
+      }
       console.error('evening_preview_send_error', { chatId: user.chat_id, error: String(error) });
       throw error;
     }

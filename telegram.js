@@ -39,6 +39,13 @@ export async function sendMessage(env, chatId, text, options = {}) {
   });
 }
 
+export function isTelegramUserUnavailableError(error) {
+  const value = String(error?.message ?? error ?? '').toLowerCase();
+  return value.includes('bot was blocked by the user')
+    || value.includes('user is deactivated')
+    || value.includes('chat not found');
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

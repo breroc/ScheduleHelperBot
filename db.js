@@ -150,6 +150,8 @@ export async function ensureUserWithMeta(db, chatId, language, botFingerprint = 
     await updateUserTelegramProfile(db, chatId, telegramProfile);
   }
 
+  await markUserActive(db, chatId);
+
   const user = await getUser(db, chatId);
   return {
     user,
@@ -254,8 +256,38 @@ export async function setLastEveningSent(db, chatId, dateKey) {
     .run();
 }
 
+export async function markUserActive(db, chatId) {
+  try {
+    await db
+      .prepare('UPDATE users SET is_active = 1, deactivated_at = NULL, last_seen_at = CURRENT_TIMESTAMP WHERE chat_id = ?')
+      .bind(chatId)
+      .run();
+  } catch (error) {
+    console.error('mark_user_active_warning', { chatId, error: String(error) });
+  }
+}
+
+export async function markUserInactive(db, chatId) {
+  try {
+    await db
+      .prepare('UPDATE users SET is_active = 0, deactivated_at = CURRENT_TIMESTAMP WHERE chat_id = ?')
+      .bind(chatId)
+      .run();
+  } catch (error) {
+    console.error('mark_user_inactive_warning', { chatId, error: String(error) });
+  }
+}
+
 export async function getAllUsers(db) {
-  const { results } = await db.prepare('SELECT chat_id, language FROM users').all();
+  let results = [];
+  try {
+    const response = await db.prepare('SELECT chat_id, language FROM users WHERE COALESCE(is_active, 1) = 1').all();
+    results = response.results ?? [];
+  } catch (error) {
+    console.error('get_all_users_active_filter_warning', { error: String(error) });
+    const response = await db.prepare('SELECT chat_id, language FROM users').all();
+    results = response.results ?? [];
+  }
   return (results ?? []).map((row) => ({
     chat_id: Number(row.chat_id),
     language: row.language ?? CONFIG.DEFAULT_LANGUAGE
@@ -263,10 +295,21 @@ export async function getAllUsers(db) {
 }
 
 export async function getUsersByGroup(db, groupName) {
-  const { results } = await db
-    .prepare('SELECT chat_id, language FROM users WHERE group_name = ?')
-    .bind(groupName)
-    .all();
+  let results = [];
+  try {
+    const response = await db
+      .prepare('SELECT chat_id, language FROM users WHERE group_name = ? AND COALESCE(is_active, 1) = 1')
+      .bind(groupName)
+      .all();
+    results = response.results ?? [];
+  } catch (error) {
+    console.error('get_users_by_group_active_filter_warning', { groupName, error: String(error) });
+    const response = await db
+      .prepare('SELECT chat_id, language FROM users WHERE group_name = ?')
+      .bind(groupName)
+      .all();
+    results = response.results ?? [];
+  }
 
   return (results ?? []).map((row) => ({
     chat_id: Number(row.chat_id),
@@ -275,11 +318,23 @@ export async function getUsersByGroup(db, groupName) {
 }
 
 export async function getUsersForMorning(db) {
-  const { results } = await db
-    .prepare(
-      'SELECT * FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
-    )
-    .all();
+  let results = [];
+  try {
+    const response = await db
+      .prepare(
+        'SELECT * FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1 AND COALESCE(is_active, 1) = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  } catch (error) {
+    console.error('get_users_for_morning_active_filter_warning', { error: String(error) });
+    const response = await db
+      .prepare(
+        'SELECT * FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  }
 
   return (results ?? []).map((row) => ({
     chat_id: Number(row.chat_id),
@@ -292,11 +347,23 @@ export async function getUsersForMorning(db) {
 }
 
 export async function getUsersForReminders(db) {
-  const { results } = await db
-    .prepare(
-      'SELECT chat_id, group_name, language, notifications_enabled, reminder_minutes, last_reminder_key FROM users WHERE group_name IS NOT NULL AND notifications_enabled = 1'
-    )
-    .all();
+  let results = [];
+  try {
+    const response = await db
+      .prepare(
+        'SELECT chat_id, group_name, language, notifications_enabled, reminder_minutes, last_reminder_key FROM users WHERE group_name IS NOT NULL AND notifications_enabled = 1 AND COALESCE(is_active, 1) = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  } catch (error) {
+    console.error('get_users_for_reminders_active_filter_warning', { error: String(error) });
+    const response = await db
+      .prepare(
+        'SELECT chat_id, group_name, language, notifications_enabled, reminder_minutes, last_reminder_key FROM users WHERE group_name IS NOT NULL AND notifications_enabled = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  }
 
   return (results ?? []).map((row) => ({
     chat_id: Number(row.chat_id),
@@ -309,11 +376,23 @@ export async function getUsersForReminders(db) {
 }
 
 export async function getUsersForEvening(db) {
-  const { results } = await db
-    .prepare(
-      'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
-    )
-    .all();
+  let results = [];
+  try {
+    const response = await db
+      .prepare(
+        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1 AND COALESCE(is_active, 1) = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  } catch (error) {
+    console.error('get_users_for_evening_active_filter_warning', { error: String(error) });
+    const response = await db
+      .prepare(
+        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
+      )
+      .all();
+    results = response.results ?? [];
+  }
 
   return (results ?? []).map((row) => ({
     chat_id: Number(row.chat_id),
@@ -325,26 +404,49 @@ export async function getUsersForEvening(db) {
 }
 
 export async function getStats(db) {
-  const total = await db.prepare('SELECT COUNT(*) AS count FROM users').first();
-  const notifications = await db
-    .prepare('SELECT COUNT(*) AS count FROM users WHERE notifications_enabled = 1')
-    .first();
-  const groups = await db
-    .prepare('SELECT group_name, COUNT(*) AS count FROM users WHERE group_name IS NOT NULL GROUP BY group_name ORDER BY group_name ASC')
-    .all();
+  let total = null;
+  let inactive = null;
+  let notifications = null;
+  let groups = { results: [] };
+  let useActiveFilter = true;
+
+  try {
+    total = await db.prepare('SELECT COUNT(*) AS count FROM users WHERE COALESCE(is_active, 1) = 1').first();
+    inactive = await db.prepare('SELECT COUNT(*) AS count FROM users WHERE COALESCE(is_active, 1) = 0').first();
+    notifications = await db
+      .prepare('SELECT COUNT(*) AS count FROM users WHERE notifications_enabled = 1 AND COALESCE(is_active, 1) = 1')
+      .first();
+    groups = await db
+      .prepare('SELECT group_name, COUNT(*) AS count FROM users WHERE group_name IS NOT NULL AND COALESCE(is_active, 1) = 1 GROUP BY group_name ORDER BY group_name ASC')
+      .all();
+  } catch (error) {
+    useActiveFilter = false;
+    console.error('stats_active_filter_warning', { error: String(error) });
+    total = await db.prepare('SELECT COUNT(*) AS count FROM users').first();
+    inactive = { count: 0 };
+    notifications = await db
+      .prepare('SELECT COUNT(*) AS count FROM users WHERE notifications_enabled = 1')
+      .first();
+    groups = await db
+      .prepare('SELECT group_name, COUNT(*) AS count FROM users WHERE group_name IS NOT NULL GROUP BY group_name ORDER BY group_name ASC')
+      .all();
+  }
   let membersRows = [];
 
   try {
-    const members = await db
-      .prepare(
-        'SELECT group_name, chat_id, tg_username, tg_first_name, tg_last_name FROM users WHERE group_name IS NOT NULL ORDER BY group_name ASC, chat_id ASC'
-      )
-      .all();
+    const sql = useActiveFilter
+      ? 'SELECT group_name, chat_id, tg_username, tg_first_name, tg_last_name FROM users WHERE group_name IS NOT NULL AND COALESCE(is_active, 1) = 1 ORDER BY group_name ASC, chat_id ASC'
+      : 'SELECT group_name, chat_id, tg_username, tg_first_name, tg_last_name FROM users WHERE group_name IS NOT NULL ORDER BY group_name ASC, chat_id ASC';
+    const members = await db.prepare(sql).all();
     membersRows = members.results ?? [];
   } catch (error) {
     console.error('stats_members_query_error', error);
     const fallbackMembers = await db
-      .prepare('SELECT group_name, chat_id FROM users WHERE group_name IS NOT NULL ORDER BY group_name ASC, chat_id ASC')
+      .prepare(
+        useActiveFilter
+          ? 'SELECT group_name, chat_id FROM users WHERE group_name IS NOT NULL AND COALESCE(is_active, 1) = 1 ORDER BY group_name ASC, chat_id ASC'
+          : 'SELECT group_name, chat_id FROM users WHERE group_name IS NOT NULL ORDER BY group_name ASC, chat_id ASC'
+      )
       .all();
     membersRows = fallbackMembers.results ?? [];
   }
@@ -368,6 +470,7 @@ export async function getStats(db) {
 
   return {
     totalUsers: Number(total?.count ?? 0),
+    inactiveUsers: Number(inactive?.count ?? 0),
     notificationsEnabled: Number(notifications?.count ?? 0),
     byGroup: (groups.results ?? []).map((row) => ({
       group_name: row.group_name,

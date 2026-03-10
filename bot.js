@@ -6,6 +6,7 @@ import {
   getStats,
   getUser,
   getUsersByGroup,
+  markUserInactive,
   setUserGroup,
   setUserFavoriteGroups,
   setUserLanguage,
@@ -26,7 +27,7 @@ import {
   formatSettingsSummary,
   prependQuickGroupHeader
 } from './formatters.js';
-import { sendMessage } from './telegram.js';
+import { isTelegramUserUnavailableError, sendMessage } from './telegram.js';
 import { getLocale, resolveLanguage, SUPPORTED_LANGUAGES, t } from './translations.js';
 import {
   CONFIG,
@@ -503,6 +504,9 @@ async function onBroadcast({ env, chatId, language, text }) {
     try {
       await sendMessage(env, target.chat_id, safeText);
     } catch (error) {
+      if (isTelegramUserUnavailableError(error)) {
+        await markUserInactive(env.DB, target.chat_id);
+      }
       console.error('broadcast_send_error', { chatId: target.chat_id, error: String(error) });
       throw error;
     }
@@ -537,6 +541,9 @@ async function onBroadcastGroup({ env, chatId, language, argsText }) {
     try {
       await sendMessage(env, target.chat_id, safeText);
     } catch (error) {
+      if (isTelegramUserUnavailableError(error)) {
+        await markUserInactive(env.DB, target.chat_id);
+      }
       console.error('broadcast_group_send_error', {
         group: targetGroup,
         chatId: target.chat_id,
