@@ -5,6 +5,7 @@ import {
   getLessonsByGroupAndWeekday,
   getStats,
   getUser,
+  getUsersByGroup,
   setUserGroup,
   setUserLanguage,
   setUserMorningEnabled,
@@ -14,11 +15,9 @@ import {
 import {
   formatAdminStats,
   formatAdminUsersByGroupMessages,
-  formatEveningPreview,
   formatFullWeek,
   formatHelp,
   formatMySettings,
-  formatMorningMessage,
   formatNextClass,
   formatScheduleForToday,
   formatScheduleForTomorrow,
@@ -31,7 +30,6 @@ import {
   CONFIG,
   addDays,
   escapeHtml,
-  fetchHangzhouWeather,
   getBotInstanceId,
   getAdminId,
   getNowContext,
@@ -190,6 +188,11 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
+  if (command === '/broadcastgroup') {
+    await onBroadcastGroup({ env, chatId, language, argsText });
+    return;
+  }
+
   if (command === '/today') {
     await onTodayCommand({ env, chatId, user, language, argsText });
     return;
@@ -248,16 +251,6 @@ async function handleCommand({ text, chatId, env, user, language }) {
 
   if (command === '/help') {
     await onHelp({ env, chatId, language });
-    return;
-  }
-
-  if (command === '/morningtest') {
-    await onMorningTest({ env, chatId, language });
-    return;
-  }
-
-  if (command === '/eveningtest') {
-    await onEveningTest({ env, chatId, language });
     return;
   }
 
@@ -401,6 +394,48 @@ async function onBroadcast({ env, chatId, language, text }) {
   await sendMessage(env, chatId, t(language, 'admin.broadcastDone', { sent, failed }));
 }
 
+async function onBroadcastGroup({ env, chatId, language, argsText }) {
+  if (!isAdmin(chatId, env)) {
+    await sendMessage(env, chatId, t(language, 'common.accessDenied'));
+    return;
+  }
+
+  const trimmedArgs = String(argsText || '').trim();
+  const match = trimmedArgs.match(/^(\S+)(?:\s+([\s\S]+))?$/);
+  const targetGroup = match?.[1] ?? '';
+  const messageText = match?.[2]?.trim() ?? '';
+
+  if (!CONFIG.GROUPS.includes(targetGroup) || !messageText) {
+    await sendMessage(env, chatId, t(language, 'admin.broadcastGroupUsage'));
+    return;
+  }
+
+  const users = await getUsersByGroup(env.DB, targetGroup);
+  const safeText = escapeHtml(messageText).replaceAll('\r\n', '\n');
+  const results = await runInBatches(users, async (target) => {
+    try {
+      await sendMessage(env, target.chat_id, safeText);
+    } catch (error) {
+      console.error('broadcast_group_send_error', {
+        group: targetGroup,
+        chatId: target.chat_id,
+        error: String(error)
+      });
+      throw error;
+    }
+  });
+
+  const sent = results.filter((result) => result.status === 'fulfilled').length;
+  const failed = results.length - sent;
+  console.log('broadcast_group_summary', { group: targetGroup, total: results.length, sent, failed });
+
+  await sendMessage(env, chatId, t(language, 'admin.broadcastGroupDone', {
+    group: targetGroup,
+    sent,
+    failed
+  }));
+}
+
 async function onStats({ env, chatId, language }) {
   if (!isAdmin(chatId, env)) {
     await sendMessage(env, chatId, t(language, 'common.accessDenied'));
@@ -432,35 +467,6 @@ async function onHelp({ env, chatId, language }) {
   await sendMainMenu(env, chatId, language, formatHelp(language, isAdmin(chatId, env)));
 }
 
-async function onMorningTest({ env, chatId, language }) {
-  if (!isAdmin(chatId, env)) {
-    await sendMessage(env, chatId, t(language, 'common.accessDenied'));
-    return;
-  }
-
-  const user = await getUser(env.DB, chatId);
-  if (!user?.group_name) {
-    await sendNoGroupSelected(env, chatId, language);
-    return;
-  }
-
-  const now = getNowContext(new Date(), CONFIG.TIMEZONE);
-  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
-  const weather = await fetchHangzhouWeather();
-  const firstClassIn = getMinutesUntilFirstClass(lessons, now.nowMinutes);
-
-  await sendMainMenu(
-    env,
-    chatId,
-    user.language,
-    formatMorningMessage(user.language, {
-      weather,
-      lessons,
-      firstClassIn
-    })
-  );
-}
-
 async function onMorningToggle({ env, chatId, user, language }) {
   const nextValue = Number(user?.morning_enabled) === 1 ? 0 : 1;
   await setUserMorningEnabled(env.DB, chatId, nextValue);
@@ -471,30 +477,6 @@ async function onMorningToggle({ env, chatId, user, language }) {
     : t(freshLanguage, 'settings.disabled');
 
   await sendSettingsText(env, chatId, freshLanguage, t(freshLanguage, 'settings.morningUpdated', { value }));
-}
-
-async function onEveningTest({ env, chatId, language }) {
-  if (!isAdmin(chatId, env)) {
-    await sendMessage(env, chatId, t(language, 'common.accessDenied'));
-    return;
-  }
-
-  const user = await getUser(env.DB, chatId);
-  if (!user?.group_name) {
-    await sendNoGroupSelected(env, chatId, language);
-    return;
-  }
-
-  const tomorrow = addDays(new Date(), 1);
-  const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
-  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, parts.weekday);
-
-  await sendMainMenu(
-    env,
-    chatId,
-    user.language,
-    formatEveningPreview(user.language, { lessons })
-  );
 }
 
 function detectAction(text) {
@@ -661,21 +643,6 @@ function groupKeyboard(language) {
     keyboard: [...rows, [menu.back]],
     resize_keyboard: true
   };
-}
-
-function getMinutesUntilFirstClass(lessons, nowMinutes) {
-  for (const lesson of lessons) {
-    const startMinutes = parseTimeToMinutes(lesson.start_time);
-    if (startMinutes === null) {
-      continue;
-    }
-
-    if (startMinutes >= nowMinutes) {
-      return startMinutes - nowMinutes;
-    }
-  }
-
-  return null;
 }
 
 async function notifyAdminAboutNewUser(env, message) {

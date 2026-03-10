@@ -248,6 +248,18 @@ export async function getAllUsers(db) {
   }));
 }
 
+export async function getUsersByGroup(db, groupName) {
+  const { results } = await db
+    .prepare('SELECT chat_id, language FROM users WHERE group_name = ?')
+    .bind(groupName)
+    .all();
+
+  return (results ?? []).map((row) => ({
+    chat_id: Number(row.chat_id),
+    language: row.language ?? CONFIG.DEFAULT_LANGUAGE
+  }));
+}
+
 export async function getUsersForMorning(db) {
   const { results } = await db
     .prepare(

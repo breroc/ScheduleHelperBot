@@ -104,7 +104,9 @@ const TRANSLATIONS = {
     },
     admin: {
       broadcastUsage: 'Usage: /broadcast your text',
+      broadcastGroupUsage: 'Usage: /broadcastgroup 2-7 your text',
       broadcastDone: '📣 Broadcast completed\n\n✅ Sent: <b>{sent}</b>\n❌ Failed: <b>{failed}</b>',
+      broadcastGroupDone: '📣 Group broadcast completed\n\n👥 Group: <b>{group}</b>\n✅ Sent: <b>{sent}</b>\n❌ Failed: <b>{failed}</b>',
       statsTitle: '📊 <b>Bot stats</b>',
       totalUsers: '👥 Total users: <b>{count}</b>',
       notificationsOn: '🔔 Notifications enabled: <b>{count}</b>',
@@ -128,7 +130,7 @@ const TRANSLATIONS = {
     help: {
       title: '❓ <b>Help</b>',
       body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for selected group\n/tomorrow - tomorrow schedule\n/week - full week\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/morning - toggle daily updates\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n🧾 My settings\n🔄 Change group\n🌅 Daily updates',
-      admin: '\n\nAdmin:\n/stats - bot stats\n/broadcast text - send to all users\n/morningtest - send morning message to yourself now\n/eveningtest - send evening preview to yourself now'
+      admin: '\n\nAdmin:\n/stats - bot stats\n/broadcast text - send to all users\n/broadcastgroup 2-7 text - send to one group'
     },
     weekdays: {
       1: 'Monday',
@@ -249,7 +251,9 @@ const TRANSLATIONS = {
     },
     admin: {
       broadcastUsage: 'Использование: /broadcast ваш текст',
+      broadcastGroupUsage: 'Использование: /broadcastgroup 2-7 ваш текст',
       broadcastDone: '📣 Рассылка завершена\n\n✅ Отправлено: <b>{sent}</b>\n❌ Ошибок: <b>{failed}</b>',
+      broadcastGroupDone: '📣 Рассылка по группе завершена\n\n👥 Группа: <b>{group}</b>\n✅ Отправлено: <b>{sent}</b>\n❌ Ошибок: <b>{failed}</b>',
       statsTitle: '📊 <b>Статистика бота</b>',
       totalUsers: '👥 Всего пользователей: <b>{count}</b>',
       notificationsOn: '🔔 С уведомлениями: <b>{count}</b>',
@@ -273,7 +277,7 @@ const TRANSLATIONS = {
     help: {
       title: '❓ <b>Помощь</b>',
       body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть группу\n/tomorrow - расписание на завтра\n/week - расписание на неделю\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/morning - переключить ежедневные сообщения\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n🧾 Мои настройки\n🔄 Сменить группу\n🌅 Ежедневные сообщения',
-      admin: '\n\nАдмин:\n/stats - статистика\n/broadcast текст - рассылка всем\n/morningtest - отправить себе утреннее сообщение сейчас\n/eveningtest - отправить себе вечернее сообщение сейчас'
+      admin: '\n\nАдмин:\n/stats - статистика\n/broadcast текст - рассылка всем\n/broadcastgroup 2-7 текст - рассылка одной группе'
     },
     weekdays: {
       1: 'Понедельник',
