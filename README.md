@@ -1,7 +1,7 @@
 # ScheduleHelperBot (Cloudflare Workers)
 
 Production-like Telegram schedule bot on **Cloudflare Workers** with these features:
-- group selection (`2-7`, `2-8`, `3-4`, `5-2`, `6-2`)
+- group selection (`2-6`, `2-7`, `2-8`, `3-4`, `5-2`, `6-2`)
 - today / tomorrow / full week / next class
 - quick group command `/today 2-8` (without changing your selected group)
 - RU/EN language
