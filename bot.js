@@ -14,6 +14,7 @@ import {
 import {
   formatAdminStats,
   formatAdminUsersByGroupMessages,
+  formatEveningPreview,
   formatFullWeek,
   formatHelp,
   formatMySettings,
@@ -255,6 +256,11 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
+  if (command === '/eveningtest') {
+    await onEveningTest({ env, chatId, language });
+    return;
+  }
+
   await sendMainMenu(env, chatId, language, t(language, 'common.unknownCommand'));
 }
 
@@ -465,6 +471,30 @@ async function onMorningToggle({ env, chatId, user, language }) {
     : t(freshLanguage, 'settings.disabled');
 
   await sendSettingsText(env, chatId, freshLanguage, t(freshLanguage, 'settings.morningUpdated', { value }));
+}
+
+async function onEveningTest({ env, chatId, language }) {
+  if (!isAdmin(chatId, env)) {
+    await sendMessage(env, chatId, t(language, 'common.accessDenied'));
+    return;
+  }
+
+  const user = await getUser(env.DB, chatId);
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const tomorrow = addDays(new Date(), 1);
+  const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, parts.weekday);
+
+  await sendMainMenu(
+    env,
+    chatId,
+    user.language,
+    formatEveningPreview(user.language, { lessons })
+  );
 }
 
 function detectAction(text) {
