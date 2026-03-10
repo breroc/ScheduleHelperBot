@@ -93,6 +93,7 @@ const TRANSLATIONS = {
     },
     morning: {
       title: '🌤 <b>Good morning!</b>',
+      summary: '📚 Classes today: <b>{count}</b>',
       todayLessons: '📅 <b>Today:</b>',
       noLessons: '🎉 Today there are no classes.'
     },
@@ -236,6 +237,7 @@ const TRANSLATIONS = {
     },
     morning: {
       title: '🌤 <b>Доброе утро!</b>',
+      summary: '📚 Пар сегодня: <b>{count}</b>',
       todayLessons: '📅 <b>Сегодня:</b>',
       noLessons: '🎉 Сегодня занятий нет.'
     },

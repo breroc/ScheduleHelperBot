@@ -145,23 +145,26 @@ export function formatMorningMessage(language, payload) {
     lines.push(t(language, 'schedule.firstClassIn', {
       time: minutesToHuman(firstClassIn, language)
     }));
+  }
+
+  if (lessons.length) {
+    lines.push(t(language, 'morning.summary', { count: lessons.length }));
+  }
+
+  const hasMorningMeta = (typeof firstClassIn === 'number' && firstClassIn >= 0) || lessons.length > 0;
+  if (hasMorningMeta) {
     lines.push('');
   }
 
   lines.push(t(language, 'morning.todayLessons'));
+  lines.push('');
 
   if (!lessons.length) {
     lines.push(t(language, 'morning.noLessons'));
     return lines.join('\n');
   }
 
-  for (let i = 0; i < lessons.length; i += 1) {
-    const lesson = lessons[i];
-    const prefix = lessonBadge(lesson, i);
-    const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
-    const subject = escapeHtml(lesson.subject || '-');
-    lines.push(`${prefix} ${range} ${subject}`);
-  }
+  lines.push(formatDigestLessonBlocks(lessons));
 
   return lines.join('\n');
 }
@@ -190,8 +193,7 @@ export function formatEveningPreview(language, payload) {
   lines.push(t(language, 'evening.lessonsTitle'));
   lines.push('');
 
-  const blocks = lessons.map((lesson, index) => formatWeekLessonBlock(lesson, index));
-  lines.push(blocks.join('\n\n'));
+  lines.push(formatDigestLessonBlocks(lessons));
 
   return lines.join('\n');
 }
@@ -395,6 +397,12 @@ function formatStatusLine(language, status) {
   }
 
   return t(language, 'schedule.statusFinished');
+}
+
+function formatDigestLessonBlocks(lessons) {
+  return lessons
+    .map((lesson, index) => formatWeekLessonBlock(lesson, index))
+    .join('\n\n');
 }
 
 function formatSettingsText(language, user, titleKey) {
