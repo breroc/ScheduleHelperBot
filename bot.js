@@ -421,12 +421,13 @@ async function onBroadcast({ env, chatId, language, text }) {
   }
 
   const users = await getAllUsers(env.DB);
+  const safeText = escapeHtml(text).replaceAll('\r\n', '\n');
   let sent = 0;
   let failed = 0;
 
   for (const target of users) {
     try {
-      await sendMessage(env, target.chat_id, text);
+      await sendMessage(env, target.chat_id, safeText);
       sent += 1;
     } catch (error) {
       failed += 1;
