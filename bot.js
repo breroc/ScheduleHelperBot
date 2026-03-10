@@ -180,11 +180,13 @@ export async function handleUpdate(update, env) {
 }
 
 async function handleCommand({ text, chatId, env, user, language }) {
-  const [rawCommand, ...rest] = text.split(' ');
+  const trimmedText = String(text ?? '').trim();
+  const match = trimmedText.match(/^(\S+)(?:\s+([\s\S]*))?$/);
+  const rawCommand = match?.[1] ?? '';
+  const argsText = match?.[2]?.trim() ?? '';
   const command = String(rawCommand || '')
     .split('@')[0]
     .toLowerCase();
-  const argsText = rest.join(' ').trim();
 
   if (command === '/start') {
     if (!user.group_name) {
