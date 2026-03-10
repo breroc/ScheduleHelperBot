@@ -375,18 +375,17 @@ function formatLessonBlock(lesson, index, statusLine) {
 
 function formatWeekLessonBlock(lesson, index) {
   const lines = [];
-  lines.push(`┌ ${numberEmoji(index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
-  lines.push(`│ ${escapeHtml(lesson.subject || '-')}`);
+  lines.push(`${numberEmoji(index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
+  lines.push(`${escapeHtml(lesson.subject || '-')}`);
 
   if (lesson.teacher) {
-    lines.push(`│ 👨‍🏫 ${escapeHtml(lesson.teacher)}`);
+    lines.push(`👨‍🏫 ${escapeHtml(lesson.teacher)}`);
   }
 
   if (lesson.classroom) {
-    lines.push(`│ 📍 ${escapeHtml(lesson.classroom)}`);
+    lines.push(`📍 ${escapeHtml(lesson.classroom)}`);
   }
 
-  lines.push('└');
   return lines.join('\n');
 }
 
