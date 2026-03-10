@@ -376,5 +376,95 @@ export const STATIC_SCHEDULE = [
     classroom: '31-115',
     start_time: '10:00',
     end_time: '11:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading I',
+    teacher: 'Yang Lu',
+    classroom: '31-116',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Feng Yu',
+    classroom: '31-116',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Feng Yu',
+    classroom: '31-116',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'tuesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Speaking I',
+    teacher: 'Lan Meng',
+    classroom: '31-116',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Feng Yu',
+    classroom: '31-116',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Reading I',
+    teacher: 'Yang Lu',
+    classroom: '31-116',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Speaking I',
+    teacher: 'Lan Meng',
+    classroom: '31-116',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Writing I',
+    teacher: 'Wei Shuyuan',
+    classroom: '31-116',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-6',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Feng Yu',
+    classroom: '31-116',
+    start_time: '10:00',
+    end_time: '11:30'
   }
 ];
