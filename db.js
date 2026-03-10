@@ -124,11 +124,6 @@ async function tableExists(db, tableName) {
   return Boolean(row?.name);
 }
 
-export async function ensureUser(db, chatId, language, botFingerprint = '', telegramProfile = null) {
-  const { user } = await ensureUserWithMeta(db, chatId, language, botFingerprint, telegramProfile);
-  return user;
-}
-
 export async function ensureUserWithMeta(db, chatId, language, botFingerprint = '', telegramProfile = null) {
   const insertResult = await db
     .prepare('INSERT INTO users (chat_id, language, bot_fingerprint) VALUES (?, ?, ?) ON CONFLICT(chat_id) DO NOTHING')
@@ -214,6 +209,13 @@ export async function setUserNotifications(db, chatId, enabled, reminderMinutes)
   await db
     .prepare('UPDATE users SET notifications_enabled = ?, reminder_minutes = ? WHERE chat_id = ?')
     .bind(enabled, reminderMinutes, chatId)
+    .run();
+}
+
+export async function setUserMorningEnabled(db, chatId, enabled) {
+  await db
+    .prepare('UPDATE users SET morning_enabled = ? WHERE chat_id = ?')
+    .bind(enabled, chatId)
     .run();
 }
 
@@ -475,20 +477,11 @@ export async function getLessonsByGroupAndWeekday(db, groupName, weekday) {
     return [];
   }
 
-  const sql = `
-    SELECT
-      ${map.lessonNumberExpr} AS lesson_number,
-      ${map.weekdayExpr} AS weekday,
-      ${map.startExpr} AS start_time,
-      ${map.endExpr} AS end_time,
-      ${map.subjectExpr} AS subject,
-      ${map.teacherExpr} AS teacher,
-      ${map.classroomExpr} AS classroom
-    FROM schedule
-    WHERE ${map.groupExpr} = ?
-    ORDER BY COALESCE(${map.lessonNumberExpr}, 999), ${map.startExpr}
-  `;
-
+  const sql = buildScheduleSelectSql(
+    map,
+    `WHERE ${map.groupExpr} = ?`,
+    `ORDER BY COALESCE(${map.lessonNumberExpr}, 999), ${map.startExpr}`
+  );
   const { results } = await db.prepare(sql).bind(groupName).all();
   return normalizeLessons(results ?? []).filter((lesson) => lesson.weekday === weekday);
 }
@@ -499,19 +492,7 @@ export async function getWeekLessonsByGroup(db, groupName) {
     return [];
   }
 
-  const sql = `
-    SELECT
-      ${map.lessonNumberExpr} AS lesson_number,
-      ${map.weekdayExpr} AS weekday,
-      ${map.startExpr} AS start_time,
-      ${map.endExpr} AS end_time,
-      ${map.subjectExpr} AS subject,
-      ${map.teacherExpr} AS teacher,
-      ${map.classroomExpr} AS classroom
-    FROM schedule
-    WHERE ${map.groupExpr} = ?
-  `;
-
+  const sql = buildScheduleSelectSql(map, `WHERE ${map.groupExpr} = ?`);
   const { results } = await db.prepare(sql).bind(groupName).all();
 
   const lessons = normalizeLessons(results ?? []);
@@ -573,6 +554,22 @@ async function detectScheduleColumnMap(db) {
     teacherExpr: teacherCol ? quoteIdent(teacherCol) : 'NULL',
     classroomExpr: classroomCol ? quoteIdent(classroomCol) : 'NULL'
   };
+}
+
+function buildScheduleSelectSql(map, whereClause = '', orderByClause = '') {
+  return `
+    SELECT
+      ${map.lessonNumberExpr} AS lesson_number,
+      ${map.weekdayExpr} AS weekday,
+      ${map.startExpr} AS start_time,
+      ${map.endExpr} AS end_time,
+      ${map.subjectExpr} AS subject,
+      ${map.teacherExpr} AS teacher,
+      ${map.classroomExpr} AS classroom
+    FROM schedule
+    ${whereClause}
+    ${orderByClause}
+  `;
 }
 
 function normalizeLessons(rows) {

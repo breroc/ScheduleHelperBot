@@ -5,6 +5,8 @@ export const CONFIG = Object.freeze({
   GROUPS: ['2-6', '2-7', '2-8', '3-4', '4-6', '4-7', '5-2', '6-2'],
   DEFAULT_LANGUAGE: 'en',
   DEFAULT_REMINDER_MINUTES: 10,
+  SEND_BATCH_SIZE: 10,
+  SEND_BATCH_PAUSE_MS: 300,
   MORNING_CRON_UTC: '0 23 * * *',
   EVENING_PREVIEW_CRON_UTC: '0 12 * * *',
   ADMIN_REPORT_CRON_UTC: '5 12 * * *',
@@ -46,16 +48,6 @@ const WEEKDAY_NAME_TO_INDEX = {
   sunday: 7,
   вс: 7,
   воскресенье: 7
-};
-
-const INDEX_TO_ENGLISH_WEEKDAY = {
-  1: 'Monday',
-  2: 'Tuesday',
-  3: 'Wednesday',
-  4: 'Thursday',
-  5: 'Friday',
-  6: 'Saturday',
-  7: 'Sunday'
 };
 
 export function getAdminId(env) {
@@ -225,10 +217,6 @@ export function normalizeWeekdayValue(value) {
   return null;
 }
 
-export function getEnglishWeekdayName(weekdayIndex) {
-  return INDEX_TO_ENGLISH_WEEKDAY[weekdayIndex] ?? 'Monday';
-}
-
 export function pickLanguageByTelegram(telegramLanguageCode) {
   if (typeof telegramLanguageCode === 'string' && telegramLanguageCode.toLowerCase().startsWith('ru')) {
     return 'ru';
@@ -243,10 +231,33 @@ export function parseReminderChoice(text) {
   if (text === '10 min') {
     return { enabled: 1, minutes: 10 };
   }
-  if (text === 'Off') {
+  if (text === 'Off' || text === 'Выкл') {
     return { enabled: 0, minutes: CONFIG.DEFAULT_REMINDER_MINUTES };
   }
   return null;
+}
+
+export async function runInBatches(items, handler, options = {}) {
+  const list = Array.isArray(items) ? items : [];
+  const batchSize = Math.max(1, Number(options.batchSize ?? CONFIG.SEND_BATCH_SIZE) || CONFIG.SEND_BATCH_SIZE);
+  const pauseMs = Math.max(0, Number(options.pauseMs ?? CONFIG.SEND_BATCH_PAUSE_MS) || 0);
+  const results = [];
+
+  for (let index = 0; index < list.length; index += batchSize) {
+    const batch = list.slice(index, index + batchSize);
+    const settled = await Promise.allSettled(batch.map((item, batchIndex) => handler(item, index + batchIndex)));
+    results.push(...settled);
+
+    if (pauseMs > 0 && index + batchSize < list.length) {
+      await sleep(pauseMs);
+    }
+  }
+
+  return results;
+}
+
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function fetchHangzhouWeather() {

@@ -6,7 +6,8 @@
   "workers_dev": true,
 
   "vars": {
-    "ADMIN_ID": "787693585"
+    "ADMIN_ID": "787693585",
+    "WEBHOOK_PATH": "telegram"
   },
 
   "triggers": {

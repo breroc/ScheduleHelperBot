@@ -9,6 +9,7 @@ const TRANSLATIONS = {
       settings: '⚙️ Settings',
       language: '🌐 Language',
       notifications: '🔔 Notifications',
+      morningToggle: '🌅 Daily updates',
       mySettings: '🧾 My settings',
       changeGroup: '🔄 Change group',
       back: '⬅️ Back'
@@ -20,6 +21,7 @@ const TRANSLATIONS = {
     },
     common: {
       accessDenied: '⛔ Access denied.',
+      privateOnly: '🔒 This bot works only in private chat.',
       unknownCommand: 'I did not understand that. Use the menu below.',
       chooseGroup: 'Choose your group:',
       pickLanguage: 'Choose language:',
@@ -27,8 +29,7 @@ const TRANSLATIONS = {
       invalidGroup: '❌ Unknown group. Available groups: {groups}',
       todayUsage: 'Usage: <code>/today 2-8</code>',
       openingSettings: '⚙️ Settings menu',
-      mainMenu: '✅ Main menu',
-      loading: 'Loading...'
+      mainMenu: '✅ Main menu'
     },
     start: {
       newUser: '👋 <b>Welcome to Schedule Helper Bot!</b>\n\nI will help you with classes, reminders and morning updates.',
@@ -48,7 +49,6 @@ const TRANSLATIONS = {
       noLessonsDay: 'No classes',
       noGroup: '👥 Please choose your group first.',
       statusStartsIn: '🟢 Starts in {time}',
-      statusInProgress: '🟠 In progress',
       statusEndsIn: '🟠 Ends in {time}',
       statusFinished: '⚪ Finished',
       nextClassTitle: '📚 <b>Next class</b>',
@@ -61,12 +61,13 @@ const TRANSLATIONS = {
       title: '⚙️ <b>Settings</b>',
       languageUpdated: '🌐 Language updated: <b>{language}</b>',
       notificationsUpdated: '🔔 Notifications updated: <b>{value}</b>',
+      morningUpdated: '🌅 Daily updates: <b>{value}</b>',
       mySettingsTitle: '🧾 <b>My settings</b>',
       group: '👥 Group',
       language: '🌐 Language',
       notifications: '🔔 Notifications',
       reminder: '⏰ Reminder',
-      morning: '🌅 Morning schedule',
+      morning: '🌅 Daily updates',
       enabled: 'On',
       disabled: 'Off',
       notSelected: 'Not selected'
@@ -117,11 +118,14 @@ const TRANSLATIONS = {
     evening: {
       title: '🌙 <b>Tomorrow preview</b>',
       noLessons: '🎉 Tomorrow there are no classes.',
+      noLessonsHint: 'Enjoy a calmer evening.',
+      summary: '📚 Classes tomorrow: <b>{count}</b>',
+      firstLesson: '⏰ First class: <b>{time}</b>',
       lessonsTitle: '📆 <b>Tomorrow:</b>'
     },
     help: {
       title: '❓ <b>Help</b>',
-      body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for selected group\n/tomorrow - tomorrow schedule\n/week - full week\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n🧾 My settings\n🔄 Change group',
+      body: 'Use buttons or commands below:\n\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for selected group\n/tomorrow - tomorrow schedule\n/week - full week\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/morning - toggle daily updates\n\nButtons:\n📅 Today\n📆 Tomorrow\n📖 Full week\n📚 Next class\n⚙️ Settings\n\nSettings:\n🌐 Language\n🔔 Notifications\n🧾 My settings\n🔄 Change group\n🌅 Daily updates',
       admin: '\n\nAdmin:\n/stats - bot stats\n/broadcast text - send to all users\n/morningtest - send morning message to yourself now'
     },
     weekdays: {
@@ -148,6 +152,7 @@ const TRANSLATIONS = {
       settings: '⚙️ Настройки',
       language: '🌐 Язык',
       notifications: '🔔 Уведомления',
+      morningToggle: '🌅 Ежедневные сообщения',
       mySettings: '🧾 Мои настройки',
       changeGroup: '🔄 Сменить группу',
       back: '⬅️ Назад'
@@ -155,10 +160,11 @@ const TRANSLATIONS = {
     labels: {
       russian: 'Русский',
       english: 'English',
-      off: 'Off'
+      off: 'Выкл'
     },
     common: {
       accessDenied: '⛔ Доступ запрещен.',
+      privateOnly: '🔒 Этот бот работает только в личном чате.',
       unknownCommand: 'Не понял команду. Используйте меню ниже.',
       chooseGroup: 'Выберите вашу группу:',
       pickLanguage: 'Выберите язык:',
@@ -166,8 +172,7 @@ const TRANSLATIONS = {
       invalidGroup: '❌ Неизвестная группа. Доступные группы: {groups}',
       todayUsage: 'Использование: <code>/today 2-8</code>',
       openingSettings: '⚙️ Меню настроек',
-      mainMenu: '✅ Главное меню',
-      loading: 'Загрузка...'
+      mainMenu: '✅ Главное меню'
     },
     start: {
       newUser: '👋 <b>Добро пожаловать в Schedule Helper Bot!</b>\n\nЯ помогу с расписанием, напоминаниями и утренними сообщениями.',
@@ -187,7 +192,6 @@ const TRANSLATIONS = {
       noLessonsDay: 'Занятий нет',
       noGroup: '👥 Сначала выберите группу.',
       statusStartsIn: '🟢 До начала: {time}',
-      statusInProgress: '🟠 Идёт сейчас',
       statusEndsIn: '🟠 До конца: {time}',
       statusFinished: '⚪ Завершено',
       nextClassTitle: '📚 <b>Следующая пара</b>',
@@ -200,12 +204,13 @@ const TRANSLATIONS = {
       title: '⚙️ <b>Настройки</b>',
       languageUpdated: '🌐 Язык обновлен: <b>{language}</b>',
       notificationsUpdated: '🔔 Уведомления обновлены: <b>{value}</b>',
+      morningUpdated: '🌅 Ежедневные сообщения: <b>{value}</b>',
       mySettingsTitle: '🧾 <b>Мои настройки</b>',
       group: '👥 Группа',
       language: '🌐 Язык',
       notifications: '🔔 Уведомления',
       reminder: '⏰ Напоминание',
-      morning: '🌅 Утреннее расписание',
+      morning: '🌅 Ежедневные сообщения',
       enabled: 'Вкл',
       disabled: 'Выкл',
       notSelected: 'Не выбрана'
@@ -256,11 +261,14 @@ const TRANSLATIONS = {
     evening: {
       title: '🌙 <b>Коротко о завтра</b>',
       noLessons: '🎉 Завтра занятий нет.',
+      noLessonsHint: 'Можно немного выдохнуть.',
+      summary: '📚 Пар завтра: <b>{count}</b>',
+      firstLesson: '⏰ Первая пара: <b>{time}</b>',
       lessonsTitle: '📆 <b>Завтра:</b>'
     },
     help: {
       title: '❓ <b>Помощь</b>',
-      body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть группу\n/tomorrow - расписание на завтра\n/week - расписание на неделю\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n🧾 Мои настройки\n🔄 Сменить группу',
+      body: 'Используйте кнопки или команды:\n\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть группу\n/tomorrow - расписание на завтра\n/week - расписание на неделю\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/morning - переключить ежедневные сообщения\n\nКнопки:\n📅 Сегодня\n📆 Завтра\n📖 Вся неделя\n📚 Следующая пара\n⚙️ Настройки\n\nВ настройках:\n🌐 Язык\n🔔 Уведомления\n🧾 Мои настройки\n🔄 Сменить группу\n🌅 Ежедневные сообщения',
       admin: '\n\nАдмин:\n/stats - статистика\n/broadcast текст - рассылка всем\n/morningtest - отправить себе утреннее сообщение сейчас'
     },
     weekdays: {
@@ -303,19 +311,6 @@ export function t(language, key, params = {}) {
 
 export function getLocale(language) {
   return TRANSLATIONS[resolveLanguage(language)];
-}
-
-export function getMenuLabels(language) {
-  return getLocale(language).menu;
-}
-
-export function getAllMenuPhrases() {
-  const phrases = [];
-  for (const locale of Object.values(TRANSLATIONS)) {
-    const items = [...Object.values(locale.menu), locale.labels.russian, locale.labels.english, locale.labels.off];
-    phrases.push(...items);
-  }
-  return [...new Set(phrases)];
 }
 
 export const SUPPORTED_LANGUAGES = ['en', 'ru'];

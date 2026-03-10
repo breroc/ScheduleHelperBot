@@ -7,6 +7,7 @@ import {
   getUser,
   setUserGroup,
   setUserLanguage,
+  setUserMorningEnabled,
   setUserNotifications,
   getWeekLessonsByGroup
 } from './db.js';
@@ -24,7 +25,7 @@ import {
   prependQuickGroupHeader
 } from './formatters.js';
 import { sendMessage } from './telegram.js';
-import { getLocale, resolveLanguage, t } from './translations.js';
+import { getLocale, resolveLanguage, SUPPORTED_LANGUAGES, t } from './translations.js';
 import {
   CONFIG,
   addDays,
@@ -36,24 +37,30 @@ import {
   getZonedDateParts,
   parseReminderChoice,
   parseTimeToMinutes,
-  pickLanguageByTelegram
+  pickLanguageByTelegram,
+  runInBatches
 } from './utils.js';
 
-const LOCALES = ['en', 'ru'];
-
 export async function handleUpdate(update, env) {
-  const message = update?.message ?? update?.edited_message;
+  const message = update?.message;
   if (!message || typeof message.text !== 'string') {
     return;
   }
 
+  const text = message.text.trim();
   const chatId = Number(message.chat?.id);
   if (!Number.isFinite(chatId)) {
     return;
   }
 
-  const text = message.text.trim();
   const defaultLang = pickLanguageByTelegram(message.from?.language_code);
+  if (message.chat?.type !== 'private') {
+    if (text.startsWith('/')) {
+      await sendMessage(env, chatId, t(defaultLang, 'common.privateOnly'));
+    }
+    return;
+  }
+
   const botInstanceId = getBotInstanceId(env);
   const ensured = await ensureUserWithMeta(env.DB, chatId, defaultLang, botInstanceId, message.from);
   let user = ensured.user;
@@ -75,9 +82,7 @@ export async function handleUpdate(update, env) {
     language = resolveLanguage(user.language);
 
     const key = wasSelected ? 'groups.changed' : 'groups.saved';
-    await sendMessage(env, chatId, t(language, key, { group: text }), {
-      reply_markup: mainMenuKeyboard(language)
-    });
+    await sendMainMenu(env, chatId, language, t(language, key, { group: text }));
     return;
   }
 
@@ -96,53 +101,40 @@ export async function handleUpdate(update, env) {
       await onNextClass({ env, chatId, user, language });
       return;
     case 'settings':
-      await sendMessage(env, chatId, formatSettingsSummary(language, user), {
-        reply_markup: settingsKeyboard(language)
-      });
+      await sendSettingsMenu(env, chatId, language, user);
       return;
     case 'language':
-      await sendMessage(env, chatId, t(language, 'common.pickLanguage'), {
-        reply_markup: languageKeyboard(language)
-      });
+      await sendLanguagePrompt(env, chatId, language);
       return;
     case 'notifications':
-      await sendMessage(env, chatId, t(language, 'common.pickNotifications'), {
-        reply_markup: notificationsKeyboard(language)
-      });
+      await sendNotificationPrompt(env, chatId, language);
+      return;
+    case 'morningToggle':
+      await onMorningToggle({ env, chatId, user, language });
       return;
     case 'mySettings':
       user = await getUser(env.DB, chatId);
       language = resolveLanguage(user?.language ?? language);
-      await sendMessage(env, chatId, formatMySettings(language, user), {
-        reply_markup: settingsKeyboard(language)
-      });
+      await sendSettingsDetails(env, chatId, language, user);
       return;
     case 'changeGroup':
-      await sendMessage(env, chatId, t(language, 'common.chooseGroup'), {
-        reply_markup: groupKeyboard(language)
-      });
+      await sendGroupPrompt(env, chatId, language);
       return;
     case 'back':
-      await sendMessage(env, chatId, t(language, 'common.mainMenu'), {
-        reply_markup: mainMenuKeyboard(language)
-      });
+      await sendMainMenu(env, chatId, language, t(language, 'common.mainMenu'));
       return;
     case 'langRu': {
       await setUserLanguage(env.DB, chatId, 'ru');
       user = await getUser(env.DB, chatId);
       language = 'ru';
-      await sendMessage(env, chatId, t(language, 'settings.languageUpdated', { language: 'Русский' }), {
-        reply_markup: settingsKeyboard(language)
-      });
+      await sendSettingsText(env, chatId, language, t(language, 'settings.languageUpdated', { language: 'Русский' }));
       return;
     }
     case 'langEn': {
       await setUserLanguage(env.DB, chatId, 'en');
       user = await getUser(env.DB, chatId);
       language = 'en';
-      await sendMessage(env, chatId, t(language, 'settings.languageUpdated', { language: 'English' }), {
-        reply_markup: settingsKeyboard(language)
-      });
+      await sendSettingsText(env, chatId, language, t(language, 'settings.languageUpdated', { language: 'English' }));
       return;
     }
     case 'notifChoice': {
@@ -156,9 +148,7 @@ export async function handleUpdate(update, env) {
           ? `${choice.minutes} min`
           : t(language, 'settings.disabled');
 
-        await sendMessage(env, chatId, t(language, 'settings.notificationsUpdated', { value }), {
-          reply_markup: settingsKeyboard(language)
-        });
+        await sendSettingsText(env, chatId, language, t(language, 'settings.notificationsUpdated', { value }));
         return;
       }
       break;
@@ -168,15 +158,11 @@ export async function handleUpdate(update, env) {
   }
 
   if (!user.group_name) {
-    await sendMessage(env, chatId, `${t(language, 'schedule.noGroup')}\n\n${t(language, 'common.chooseGroup')}`, {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendGroupPrompt(env, chatId, language, t(language, 'schedule.noGroup'));
     return;
   }
 
-  await sendMessage(env, chatId, t(language, 'common.unknownCommand'), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, t(language, 'common.unknownCommand'));
 }
 
 async function handleCommand({ text, chatId, env, user, language }) {
@@ -190,15 +176,11 @@ async function handleCommand({ text, chatId, env, user, language }) {
 
   if (command === '/start') {
     if (!user.group_name) {
-      await sendMessage(env, chatId, `${t(language, 'start.newUser')}\n\n${t(language, 'common.chooseGroup')}`, {
-        reply_markup: groupKeyboard(language)
-      });
+      await sendGroupPrompt(env, chatId, language, t(language, 'start.newUser'));
       return;
     }
 
-    await sendMessage(env, chatId, t(language, 'start.knownUser'), {
-      reply_markup: mainMenuKeyboard(language)
-    });
+    await sendMainMenu(env, chatId, language, t(language, 'start.knownUser'));
     return;
   }
 
@@ -228,38 +210,33 @@ async function handleCommand({ text, chatId, env, user, language }) {
   }
 
   if (command === '/settings') {
-    await sendMessage(env, chatId, formatSettingsSummary(language, user), {
-      reply_markup: settingsKeyboard(language)
-    });
+    await sendSettingsMenu(env, chatId, language, user);
     return;
   }
 
   if (command === '/language') {
-    await sendMessage(env, chatId, t(language, 'common.pickLanguage'), {
-      reply_markup: languageKeyboard(language)
-    });
+    await sendLanguagePrompt(env, chatId, language);
     return;
   }
 
   if (command === '/notifications') {
-    await sendMessage(env, chatId, t(language, 'common.pickNotifications'), {
-      reply_markup: notificationsKeyboard(language)
-    });
+    await sendNotificationPrompt(env, chatId, language);
+    return;
+  }
+
+  if (command === '/morning') {
+    await onMorningToggle({ env, chatId, user, language });
     return;
   }
 
   if (command === '/mysettings') {
     const freshUser = await getUser(env.DB, chatId);
-    await sendMessage(env, chatId, formatMySettings(language, freshUser ?? user), {
-      reply_markup: settingsKeyboard(language)
-    });
+    await sendSettingsDetails(env, chatId, language, freshUser ?? user);
     return;
   }
 
   if (command === '/changegroup') {
-    await sendMessage(env, chatId, t(language, 'common.chooseGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendGroupPrompt(env, chatId, language);
     return;
   }
 
@@ -278,25 +255,19 @@ async function handleCommand({ text, chatId, env, user, language }) {
     return;
   }
 
-  await sendMessage(env, chatId, t(language, 'common.unknownCommand'), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, t(language, 'common.unknownCommand'));
 }
 
 async function onToday({ env, chatId, user, language }) {
   if (!user.group_name) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
 
-  await sendMessage(env, chatId, formatScheduleForToday(language, lessons, now.nowMinutes), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, formatScheduleForToday(language, lessons, now.nowMinutes));
 }
 
 async function onTodayCommand({ env, chatId, user, language, argsText }) {
@@ -315,9 +286,7 @@ async function onTodayCommand({ env, chatId, user, language, argsText }) {
 
   const targetGroup = requestedGroup || user.group_name;
   if (!targetGroup) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
@@ -329,16 +298,12 @@ async function onTodayCommand({ env, chatId, user, language, argsText }) {
     text = prependQuickGroupHeader(language, targetGroup, text);
   }
 
-  await sendMessage(env, chatId, text, {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, text);
 }
 
 async function onTomorrow({ env, chatId, user, language }) {
   if (!user.group_name) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
@@ -346,30 +311,22 @@ async function onTomorrow({ env, chatId, user, language }) {
   const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, parts.weekday);
 
-  await sendMessage(env, chatId, formatScheduleForTomorrow(language, lessons), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, formatScheduleForTomorrow(language, lessons));
 }
 
 async function onFullWeek({ env, chatId, user, language }) {
   if (!user.group_name) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
   const lessons = await getWeekLessonsByGroup(env.DB, user.group_name);
-  await sendMessage(env, chatId, formatFullWeek(language, lessons), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, formatFullWeek(language, lessons));
 }
 
 async function onNextClass({ env, chatId, user, language }) {
   if (!user.group_name) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
@@ -406,13 +363,11 @@ async function onNextClass({ env, chatId, user, language }) {
     }
   }
 
-  await sendMessage(env, chatId, formatNextClass(language, payload), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, formatNextClass(language, payload));
 }
 
 async function onBroadcast({ env, chatId, language, text }) {
-  if (chatId !== getAdminId(env)) {
+  if (!isAdmin(chatId, env)) {
     await sendMessage(env, chatId, t(language, 'common.accessDenied'));
     return;
   }
@@ -424,24 +379,24 @@ async function onBroadcast({ env, chatId, language, text }) {
 
   const users = await getAllUsers(env.DB);
   const safeText = escapeHtml(text).replaceAll('\r\n', '\n');
-  let sent = 0;
-  let failed = 0;
-
-  for (const target of users) {
+  const results = await runInBatches(users, async (target) => {
     try {
       await sendMessage(env, target.chat_id, safeText);
-      sent += 1;
     } catch (error) {
-      failed += 1;
       console.error('broadcast_send_error', { chatId: target.chat_id, error: String(error) });
+      throw error;
     }
-  }
+  });
+
+  const sent = results.filter((result) => result.status === 'fulfilled').length;
+  const failed = results.length - sent;
+  console.log('broadcast_summary', { total: results.length, sent, failed });
 
   await sendMessage(env, chatId, t(language, 'admin.broadcastDone', { sent, failed }));
 }
 
 async function onStats({ env, chatId, language }) {
-  if (chatId !== getAdminId(env)) {
+  if (!isAdmin(chatId, env)) {
     await sendMessage(env, chatId, t(language, 'common.accessDenied'));
     return;
   }
@@ -459,28 +414,27 @@ async function onStats({ env, chatId, language }) {
 
   const membersMessages = formatAdminUsersByGroupMessages(language, stats.byGroupMembers);
   for (const text of membersMessages) {
-    await sendMessage(env, chatId, text);
+    try {
+      await sendMessage(env, chatId, text);
+    } catch (error) {
+      console.error('stats_members_send_error', { chatId, error: String(error) });
+    }
   }
 }
 
 async function onHelp({ env, chatId, language }) {
-  const isAdmin = chatId === getAdminId(env);
-  await sendMessage(env, chatId, formatHelp(language, isAdmin), {
-    reply_markup: mainMenuKeyboard(language)
-  });
+  await sendMainMenu(env, chatId, language, formatHelp(language, isAdmin(chatId, env)));
 }
 
 async function onMorningTest({ env, chatId, language }) {
-  if (chatId !== getAdminId(env)) {
+  if (!isAdmin(chatId, env)) {
     await sendMessage(env, chatId, t(language, 'common.accessDenied'));
     return;
   }
 
   const user = await getUser(env.DB, chatId);
   if (!user?.group_name) {
-    await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
-      reply_markup: groupKeyboard(language)
-    });
+    await sendNoGroupSelected(env, chatId, language);
     return;
   }
 
@@ -489,16 +443,28 @@ async function onMorningTest({ env, chatId, language }) {
   const weather = await fetchHangzhouWeather();
   const firstClassIn = getMinutesUntilFirstClass(lessons, now.nowMinutes);
 
-  await sendMessage(
+  await sendMainMenu(
     env,
     chatId,
+    user.language,
     formatMorningMessage(user.language, {
       weather,
       lessons,
       firstClassIn
-    }),
-    { reply_markup: mainMenuKeyboard(user.language) }
+    })
   );
+}
+
+async function onMorningToggle({ env, chatId, user, language }) {
+  const nextValue = Number(user?.morning_enabled) === 1 ? 0 : 1;
+  await setUserMorningEnabled(env.DB, chatId, nextValue);
+  const freshUser = await getUser(env.DB, chatId);
+  const freshLanguage = resolveLanguage(freshUser?.language ?? language);
+  const value = Number(freshUser?.morning_enabled) === 1
+    ? t(freshLanguage, 'settings.enabled')
+    : t(freshLanguage, 'settings.disabled');
+
+  await sendSettingsText(env, chatId, freshLanguage, t(freshLanguage, 'settings.morningUpdated', { value }));
 }
 
 function detectAction(text) {
@@ -522,6 +488,9 @@ function detectAction(text) {
   }
   if (matchesMenuLabel(text, 'notifications')) {
     return 'notifications';
+  }
+  if (matchesMenuLabel(text, 'morningToggle')) {
+    return 'morningToggle';
   }
   if (matchesMenuLabel(text, 'mySettings')) {
     return 'mySettings';
@@ -548,12 +517,64 @@ function detectAction(text) {
 }
 
 function matchesMenuLabel(text, key) {
-  for (const language of LOCALES) {
+  for (const language of SUPPORTED_LANGUAGES) {
     if (getLocale(language).menu[key] === text) {
       return true;
     }
   }
   return false;
+}
+
+function isAdmin(chatId, env) {
+  return chatId === getAdminId(env);
+}
+
+async function sendMainMenu(env, chatId, language, text) {
+  await sendMessage(env, chatId, text, {
+    reply_markup: mainMenuKeyboard(language)
+  });
+}
+
+async function sendSettingsText(env, chatId, language, text) {
+  await sendMessage(env, chatId, text, {
+    reply_markup: settingsKeyboard(language)
+  });
+}
+
+async function sendSettingsMenu(env, chatId, language, user) {
+  await sendSettingsText(env, chatId, language, formatSettingsSummary(language, user));
+}
+
+async function sendSettingsDetails(env, chatId, language, user) {
+  await sendSettingsText(env, chatId, language, formatMySettings(language, user));
+}
+
+async function sendGroupPrompt(env, chatId, language, prefixText = '') {
+  const body = prefixText
+    ? `${prefixText}\n\n${t(language, 'common.chooseGroup')}`
+    : t(language, 'common.chooseGroup');
+
+  await sendMessage(env, chatId, body, {
+    reply_markup: groupKeyboard(language)
+  });
+}
+
+async function sendNoGroupSelected(env, chatId, language) {
+  await sendMessage(env, chatId, t(language, 'schedule.noGroup'), {
+    reply_markup: groupKeyboard(language)
+  });
+}
+
+async function sendLanguagePrompt(env, chatId, language) {
+  await sendMessage(env, chatId, t(language, 'common.pickLanguage'), {
+    reply_markup: languageKeyboard(language)
+  });
+}
+
+async function sendNotificationPrompt(env, chatId, language) {
+  await sendMessage(env, chatId, t(language, 'common.pickNotifications'), {
+    reply_markup: notificationsKeyboard(language)
+  });
 }
 
 export function mainMenuKeyboard(language) {
@@ -574,6 +595,7 @@ function settingsKeyboard(language) {
     keyboard: [
       [menu.language, menu.notifications],
       [menu.mySettings, menu.changeGroup],
+      [menu.morningToggle],
       [menu.back]
     ],
     resize_keyboard: true

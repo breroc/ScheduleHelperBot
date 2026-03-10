@@ -35,6 +35,8 @@ Worker bindings:
 - `BOT_TOKEN` (Telegram bot token)
 - `DB` (D1 binding)
 - `ADMIN_ID` (Telegram numeric chat id of admin)
+- `WEBHOOK_PATH` (default webhook path, for example `telegram`)
+- `WEBHOOK_SECRET` (optional secret token for Telegram webhook verification)
 
 Configured in `wrangler.jsonc`:
 - `main: worker.js`
@@ -106,7 +108,8 @@ After deploy, set Telegram webhook to Worker URL:
 
 ```bash
 curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
-  -d "url=https://<your-worker-domain>/"
+  -d "url=https://<your-worker-domain>/<WEBHOOK_PATH>" \
+  -d "secret_token=<YOUR_WEBHOOK_SECRET>"
 ```
 
 ## Deploy via Cloudflare + GitHub

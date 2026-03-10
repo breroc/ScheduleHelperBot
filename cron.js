@@ -23,7 +23,8 @@ import {
   getAdminId,
   getNowContext,
   getZonedDateParts,
-  parseTimeToMinutes
+  parseTimeToMinutes,
+  runInBatches
 } from './utils.js';
 
 const REMINDER_WINDOW_MINUTES = 2;
@@ -55,9 +56,10 @@ export async function handleScheduled(event, env) {
   console.warn('scheduled_event_unknown_cron', {
     received: cron,
     morning: CONFIG.MORNING_CRON_UTC,
+    evening: CONFIG.EVENING_PREVIEW_CRON_UTC,
+    adminReport: CONFIG.ADMIN_REPORT_CRON_UTC,
     reminder: CONFIG.REMINDER_CRON_UTC
   });
-  await runReminderCron(env);
 }
 
 export async function runMorningCron(env) {
@@ -65,8 +67,7 @@ export async function runMorningCron(env) {
   const users = await getUsersForMorning(env.DB);
   const weather = await fetchHangzhouWeather();
   const lessonsByGroup = new Map();
-  let sent = 0;
-  let failed = 0;
+  const targets = [];
 
   for (const user of users) {
     if (!user.group_name) {
@@ -77,6 +78,10 @@ export async function runMorningCron(env) {
       continue;
     }
 
+    targets.push(user);
+  }
+
+  const results = await runInBatches(targets, async (user) => {
     let lessons = lessonsByGroup.get(user.group_name);
     if (!lessons) {
       lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
@@ -95,12 +100,14 @@ export async function runMorningCron(env) {
         reply_markup: mainMenuKeyboard(user.language)
       });
       await setLastMorningSent(env.DB, user.chat_id, now.dateKey);
-      sent += 1;
     } catch (error) {
-      failed += 1;
       console.error('morning_send_error', { chatId: user.chat_id, error: String(error) });
+      throw error;
     }
-  }
+  });
+
+  const { sent, failed } = countSettledResults(results);
+  console.log('morning_cron_summary', { dateKey: now.dateKey, total: results.length, sent, failed });
 
   await logCronDelivery(env.DB, now.dateKey, 'morning', sent, failed);
 }
@@ -109,8 +116,7 @@ export async function runReminderCron(env) {
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const users = await getUsersForReminders(env.DB);
   const lessonsByGroup = new Map();
-  let sent = 0;
-  let failed = 0;
+  const targets = [];
 
   for (const user of users) {
     if (!user.group_name) {
@@ -133,6 +139,14 @@ export async function runReminderCron(env) {
       continue;
     }
 
+    targets.push({
+      user,
+      dueLesson,
+      reminderKey
+    });
+  }
+
+  const results = await runInBatches(targets, async ({ user, dueLesson, reminderKey }) => {
     const text = formatReminder(user.language, dueLesson.lesson, dueLesson.minutesLeft);
 
     try {
@@ -140,12 +154,14 @@ export async function runReminderCron(env) {
         reply_markup: mainMenuKeyboard(user.language)
       });
       await setLastReminderKey(env.DB, user.chat_id, reminderKey);
-      sent += 1;
     } catch (error) {
-      failed += 1;
       console.error('reminder_send_error', { chatId: user.chat_id, error: String(error) });
+      throw error;
     }
-  }
+  });
+
+  const { sent, failed } = countSettledResults(results);
+  console.log('reminder_cron_summary', { dateKey: now.dateKey, total: results.length, sent, failed });
 
   await logCronDelivery(env.DB, now.dateKey, 'reminder', sent, failed);
 }
@@ -156,8 +172,7 @@ export async function runEveningPreviewCron(env) {
   const tomorrowParts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
   const users = await getUsersForEvening(env.DB);
   const lessonsByGroup = new Map();
-  let sent = 0;
-  let failed = 0;
+  const targets = [];
 
   for (const user of users) {
     if (!user.group_name) {
@@ -168,6 +183,10 @@ export async function runEveningPreviewCron(env) {
       continue;
     }
 
+    targets.push(user);
+  }
+
+  const results = await runInBatches(targets, async (user) => {
     const cacheKey = `${user.group_name}:${tomorrowParts.weekday}`;
     let lessons = lessonsByGroup.get(cacheKey);
     if (!lessons) {
@@ -181,12 +200,14 @@ export async function runEveningPreviewCron(env) {
         reply_markup: mainMenuKeyboard(user.language)
       });
       await setLastEveningSent(env.DB, user.chat_id, now.dateKey);
-      sent += 1;
     } catch (error) {
-      failed += 1;
       console.error('evening_preview_send_error', { chatId: user.chat_id, error: String(error) });
+      throw error;
     }
-  }
+  });
+
+  const { sent, failed } = countSettledResults(results);
+  console.log('evening_cron_summary', { dateKey: now.dateKey, total: results.length, sent, failed });
 
   await logCronDelivery(env.DB, now.dateKey, 'evening', sent, failed);
 }
@@ -211,6 +232,7 @@ export async function runAdminDailyReportCron(env) {
   try {
     await sendMessage(env, adminId, text);
     await markAdminDailyReport(env.DB, now.dateKey);
+    console.log('admin_daily_report_sent', { dateKey: now.dateKey, adminId });
   } catch (error) {
     console.error('admin_daily_report_error', { adminId, error: String(error) });
   }
@@ -252,6 +274,14 @@ function getMinutesUntilFirstClass(lessons, nowMinutes) {
 
 function isCronMatch(received, target) {
   return normalizeCron(received) === normalizeCron(target);
+}
+
+function countSettledResults(results) {
+  const sent = results.filter((result) => result.status === 'fulfilled').length;
+  return {
+    sent,
+    failed: results.length - sent
+  };
 }
 
 function normalizeCron(cronExpr) {

@@ -119,39 +119,11 @@ export function formatNextClass(language, payload) {
 }
 
 export function formatSettingsSummary(language, user) {
-  const notificationsState = Number(user.notifications_enabled) === 1
-    ? t(language, 'settings.enabled')
-    : t(language, 'settings.disabled');
-  const reminder = Number(user.notifications_enabled) === 1
-    ? `${user.reminder_minutes} min`
-    : t(language, 'settings.disabled');
-  const group = user.group_name || t(language, 'settings.notSelected');
-
-  return `${t(language, 'settings.title')}\n\n` +
-    `${t(language, 'settings.group')}: <b>${escapeHtml(group)}</b>\n` +
-    `${t(language, 'settings.language')}: <b>${escapeHtml(user.language === 'ru' ? 'Русский' : 'English')}</b>\n` +
-    `${t(language, 'settings.notifications')}: <b>${escapeHtml(notificationsState)}</b>\n` +
-    `${t(language, 'settings.reminder')}: <b>${escapeHtml(reminder)}</b>`;
+  return formatSettingsText(language, user, 'settings.title');
 }
 
 export function formatMySettings(language, user) {
-  const notificationsState = Number(user.notifications_enabled) === 1
-    ? t(language, 'settings.enabled')
-    : t(language, 'settings.disabled');
-  const morningState = Number(user.morning_enabled) === 1
-    ? t(language, 'settings.enabled')
-    : t(language, 'settings.disabled');
-  const reminder = Number(user.notifications_enabled) === 1
-    ? `${user.reminder_minutes} min`
-    : t(language, 'settings.disabled');
-  const group = user.group_name || t(language, 'settings.notSelected');
-
-  return `${t(language, 'settings.mySettingsTitle')}\n\n` +
-    `${t(language, 'settings.group')}: <b>${escapeHtml(group)}</b>\n` +
-    `${t(language, 'settings.language')}: <b>${escapeHtml(user.language === 'ru' ? 'Русский' : 'English')}</b>\n` +
-    `${t(language, 'settings.notifications')}: <b>${escapeHtml(notificationsState)}</b>\n` +
-    `${t(language, 'settings.reminder')}: <b>${escapeHtml(reminder)}</b>\n` +
-    `${t(language, 'settings.morning')}: <b>${escapeHtml(morningState)}</b>`;
+  return formatSettingsText(language, user, 'settings.mySettingsTitle');
 }
 
 export function formatMorningMessage(language, payload) {
@@ -185,7 +157,7 @@ export function formatMorningMessage(language, payload) {
 
   for (let i = 0; i < lessons.length; i += 1) {
     const lesson = lessons[i];
-    const prefix = numberEmoji(i);
+    const prefix = lessonBadge(lesson, i);
     const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
     const subject = escapeHtml(lesson.subject || '-');
     lines.push(`${prefix} ${range} ${subject}`);
@@ -200,17 +172,26 @@ export function formatEveningPreview(language, payload) {
 
   if (!lessons.length) {
     lines.push(t(language, 'evening.noLessons'));
+    lines.push('');
+    lines.push(t(language, 'evening.noLessonsHint'));
     return lines.join('\n');
   }
 
-  lines.push(t(language, 'evening.lessonsTitle'));
-  for (let i = 0; i < lessons.length; i += 1) {
-    const lesson = lessons[i];
-    const prefix = numberEmoji(i);
-    const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
-    const subject = escapeHtml(lesson.subject || '-');
-    lines.push(`${prefix} ${range} ${subject}`);
+  const firstLesson = lessons[0];
+  const firstRange = toTimeRange(firstLesson.start_time, firstLesson.end_time);
+
+  lines.push(t(language, 'evening.summary', { count: lessons.length }));
+  if (firstRange) {
+    lines.push(t(language, 'evening.firstLesson', {
+      time: escapeHtml(firstRange)
+    }));
   }
+  lines.push('');
+  lines.push(t(language, 'evening.lessonsTitle'));
+  lines.push('');
+
+  const blocks = lessons.map((lesson, index) => formatWeekLessonBlock(lesson, index));
+  lines.push(blocks.join('\n\n'));
 
   return lines.join('\n');
 }
@@ -261,7 +242,7 @@ export function formatAdminStats(language, stats, dailyStats = null, dateKey = '
 }
 
 export function formatAdminUsersByGroupMessages(language, byGroupMembers) {
-  const sections = [];
+  const maxLength = 3500;
   const header = t(language, 'admin.usersByGroupTitle');
 
   const groups = Array.isArray(byGroupMembers) ? byGroupMembers : [];
@@ -269,42 +250,52 @@ export function formatAdminUsersByGroupMessages(language, byGroupMembers) {
     return [`${header}\n\n• ${t(language, 'admin.noUsers')}`];
   }
 
-  for (const group of groups) {
-    const sectionLines = [`<b>${escapeHtml(group.group_name || '-')}</b>`];
-    const members = Array.isArray(group.members) ? group.members : [];
-    if (!members.length) {
-      sectionLines.push(`• ${t(language, 'admin.noUsers')}`);
-    } else {
-      for (const member of members) {
-        const username = normalizeUsername(member.tg_username);
-        if (username) {
-          sectionLines.push(`• @${escapeHtml(username)} (${member.chat_id})`);
-        } else {
-          const fullName = [member.tg_first_name, member.tg_last_name]
-            .filter(Boolean)
-            .join(' ')
-            .trim();
-          if (fullName) {
-            sectionLines.push(`• ${escapeHtml(fullName)} (${member.chat_id}, ${t(language, 'admin.noUsername')})`);
-          } else {
-            sectionLines.push(`• ${member.chat_id} (${t(language, 'admin.noUsername')})`);
-          }
-        }
-      }
-    }
-    sections.push(sectionLines.join('\n'));
-  }
-
   const chunks = [];
   let current = `${header}\n\n`;
 
-  for (const section of sections) {
-    const addition = `${section}\n\n`;
-    if ((current + addition).length > 3500 && current.trim().length > header.length) {
+  for (const group of groups) {
+    const groupTitle = `<b>${escapeHtml(group.group_name || '-')}</b>\n`;
+    const members = Array.isArray(group.members) ? group.members : [];
+    const memberLines = members.length
+      ? members.map((member) => {
+        const username = normalizeUsername(member.tg_username);
+        if (username) {
+          return `• @${escapeHtml(username)} (${member.chat_id})`;
+        }
+
+        const fullName = [member.tg_first_name, member.tg_last_name]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        if (fullName) {
+          return `• ${escapeHtml(fullName)} (${member.chat_id}, ${t(language, 'admin.noUsername')})`;
+        }
+        return `• ${member.chat_id} (${t(language, 'admin.noUsername')})`;
+      })
+      : [`• ${t(language, 'admin.noUsers')}`];
+
+    if ((current + groupTitle).length > maxLength && current.trim().length > header.length) {
       chunks.push(current.trimEnd());
-      current = `${header}\n\n${addition}`;
+      current = `${header}\n\n`;
+    }
+
+    current += groupTitle;
+
+    for (const memberLine of memberLines) {
+      const line = `${memberLine}\n`;
+      if ((current + line).length > maxLength && current.trim().length > header.length) {
+        chunks.push(current.trimEnd());
+        current = `${header}\n\n${groupTitle}${line}`;
+      } else {
+        current += line;
+      }
+    }
+
+    if ((current + '\n').length > maxLength && current.trim().length > header.length) {
+      chunks.push(current.trimEnd());
+      current = `${header}\n\n`;
     } else {
-      current += addition;
+      current += '\n';
     }
   }
 
@@ -354,18 +345,7 @@ export function formatHelp(language, isAdmin = false) {
 }
 
 function formatLessonBlock(lesson, index, statusLine) {
-  const lines = [];
-  lines.push(`${numberEmoji(index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
-  lines.push(escapeHtml(lesson.subject || '-'));
-
-  if (lesson.teacher) {
-    lines.push(`👨‍🏫 ${escapeHtml(lesson.teacher)}`);
-  }
-
-  if (lesson.classroom) {
-    lines.push(`📍 ${escapeHtml(lesson.classroom)}`);
-  }
-
+  const lines = formatLessonCardLines(lesson, index);
   if (statusLine) {
     lines.push(statusLine);
   }
@@ -374,19 +354,7 @@ function formatLessonBlock(lesson, index, statusLine) {
 }
 
 function formatWeekLessonBlock(lesson, index) {
-  const lines = [];
-  lines.push(`${numberEmoji(index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
-  lines.push(`${escapeHtml(lesson.subject || '-')}`);
-
-  if (lesson.teacher) {
-    lines.push(`👨‍🏫 ${escapeHtml(lesson.teacher)}`);
-  }
-
-  if (lesson.classroom) {
-    lines.push(`📍 ${escapeHtml(lesson.classroom)}`);
-  }
-
-  return lines.join('\n');
+  return formatLessonCardLines(lesson, index).join('\n');
 }
 
 function formatSingleLessonDetails(lesson) {
@@ -429,6 +397,51 @@ function formatStatusLine(language, status) {
   return t(language, 'schedule.statusFinished');
 }
 
+function formatSettingsText(language, user, titleKey) {
+  const notificationsState = Number(user.notifications_enabled) === 1
+    ? t(language, 'settings.enabled')
+    : t(language, 'settings.disabled');
+  const morningState = Number(user.morning_enabled) === 1
+    ? t(language, 'settings.enabled')
+    : t(language, 'settings.disabled');
+  const reminder = Number(user.notifications_enabled) === 1
+    ? `${user.reminder_minutes} min`
+    : t(language, 'settings.disabled');
+  const group = user.group_name || t(language, 'settings.notSelected');
+  const languageLabel = user.language === 'ru' ? 'Русский' : 'English';
+
+  return `${t(language, titleKey)}\n\n` +
+    `${t(language, 'settings.group')}: <b>${escapeHtml(group)}</b>\n` +
+    `${t(language, 'settings.language')}: <b>${escapeHtml(languageLabel)}</b>\n` +
+    `${t(language, 'settings.notifications')}: <b>${escapeHtml(notificationsState)}</b>\n` +
+    `${t(language, 'settings.reminder')}: <b>${escapeHtml(reminder)}</b>\n` +
+    `${t(language, 'settings.morning')}: <b>${escapeHtml(morningState)}</b>`;
+}
+
+function formatLessonCardLines(lesson, index) {
+  const lines = [];
+  lines.push(`${lessonBadge(lesson, index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
+  lines.push(escapeHtml(lesson.subject || '-'));
+
+  if (lesson.teacher) {
+    lines.push(`👨‍🏫 ${escapeHtml(lesson.teacher)}`);
+  }
+
+  if (lesson.classroom) {
+    lines.push(`📍 ${escapeHtml(lesson.classroom)}`);
+  }
+
+  return lines;
+}
+
 function numberEmoji(index) {
   return NUMBER_EMOJIS[index] ?? `${index + 1}.`;
+}
+
+function lessonBadge(lesson, index) {
+  const lessonNumber = Number(lesson?.lesson_number);
+  if (Number.isInteger(lessonNumber) && lessonNumber > 0) {
+    return NUMBER_EMOJIS[lessonNumber - 1] ?? `${lessonNumber}.`;
+  }
+  return numberEmoji(index);
 }
