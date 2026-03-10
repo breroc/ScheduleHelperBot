@@ -376,7 +376,7 @@ async function onNextClass({ env, chatId, user, language }) {
     }
 
     if (now.nowMinutes >= start && now.nowMinutes < end) {
-      payload = { type: 'current', lesson, minutesLeft: 0 };
+      payload = { type: 'current', lesson, minutesLeft: end - now.nowMinutes };
       break;
     }
 

@@ -103,7 +103,9 @@ export function formatNextClass(language, payload) {
       time: minutesToHuman(payload.minutesLeft, language)
     });
   } else {
-    statusLine = t(language, 'schedule.statusInProgress');
+    statusLine = t(language, 'schedule.statusEndsIn', {
+      time: minutesToHuman(payload.minutesLeft, language)
+    });
   }
 
   return `${title}\n\n${lessonBlock}\n\n${statusLine}`;
@@ -326,7 +328,9 @@ function formatStatusLine(language, status) {
   }
 
   if (status.type === 'in_progress') {
-    return t(language, 'schedule.statusInProgress');
+    return t(language, 'schedule.statusEndsIn', {
+      time: minutesToHuman(status.minutesLeft, language)
+    });
   }
 
   if (status.type === 'unknown') {

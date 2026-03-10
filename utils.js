@@ -167,7 +167,7 @@ export function getLessonStatus(lesson, nowMinutes) {
   }
 
   if (nowMinutes >= start && nowMinutes < end) {
-    return { type: 'in_progress', minutesLeft: 0 };
+    return { type: 'in_progress', minutesLeft: end - nowMinutes };
   }
 
   return { type: 'finished', minutesLeft: 0 };
