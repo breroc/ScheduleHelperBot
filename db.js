@@ -1,4 +1,4 @@
-import { CONFIG, getEnglishWeekdayName, normalizeWeekdayValue } from './utils.js';
+import { CONFIG, normalizeWeekdayValue } from './utils.js';
 
 let schemaReadyPromise;
 let scheduleColumnsPromise;
@@ -475,8 +475,6 @@ export async function getLessonsByGroupAndWeekday(db, groupName, weekday) {
     return [];
   }
 
-  const englishName = getEnglishWeekdayName(weekday);
-
   const sql = `
     SELECT
       ${map.lessonNumberExpr} AS lesson_number,
@@ -488,12 +486,11 @@ export async function getLessonsByGroupAndWeekday(db, groupName, weekday) {
       ${map.classroomExpr} AS classroom
     FROM schedule
     WHERE ${map.groupExpr} = ?
-      AND (${map.weekdayExpr} = ? OR lower(${map.weekdayExpr}) = lower(?))
     ORDER BY COALESCE(${map.lessonNumberExpr}, 999), ${map.startExpr}
   `;
 
-  const { results } = await db.prepare(sql).bind(groupName, weekday, englishName).all();
-  return normalizeLessons(results ?? []);
+  const { results } = await db.prepare(sql).bind(groupName).all();
+  return normalizeLessons(results ?? []).filter((lesson) => lesson.weekday === weekday);
 }
 
 export async function getWeekLessonsByGroup(db, groupName) {

@@ -14,12 +14,38 @@ export const CONFIG = Object.freeze({
 
 const WEEKDAY_NAME_TO_INDEX = {
   mon: 1,
+  monday: 1,
+  пон: 1,
+  понедельник: 1,
   tue: 2,
+  tues: 2,
+  tuesday: 2,
+  вт: 2,
+  втр: 2,
+  вторник: 2,
   wed: 3,
+  weds: 3,
+  wednesday: 3,
+  ср: 3,
+  среда: 3,
   thu: 4,
+  thur: 4,
+  thurs: 4,
+  thursday: 4,
+  чт: 4,
+  четверг: 4,
   fri: 5,
+  friday: 5,
+  пт: 5,
+  пятница: 5,
   sat: 6,
-  sun: 7
+  saturday: 6,
+  сб: 6,
+  суббота: 6,
+  sun: 7,
+  sunday: 7,
+  вс: 7,
+  воскресенье: 7
 };
 
 const INDEX_TO_ENGLISH_WEEKDAY = {
@@ -185,9 +211,14 @@ export function normalizeWeekdayValue(value) {
       return numeric;
     }
 
-    const lowered = trimmed.slice(0, 3).toLowerCase();
+    const lowered = trimmed.toLowerCase();
     if (WEEKDAY_NAME_TO_INDEX[lowered]) {
       return WEEKDAY_NAME_TO_INDEX[lowered];
+    }
+
+    const shortened = lowered.slice(0, 3);
+    if (WEEKDAY_NAME_TO_INDEX[shortened]) {
+      return WEEKDAY_NAME_TO_INDEX[shortened];
     }
   }
 
