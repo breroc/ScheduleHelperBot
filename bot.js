@@ -368,7 +368,8 @@ async function onNextClass({ env, chatId, user, language }) {
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
 
   let payload = { type: 'none' };
-  for (const lesson of lessons) {
+  for (let i = 0; i < lessons.length; i += 1) {
+    const lesson = lessons[i];
     const start = parseTimeToMinutes(lesson.start_time);
     const end = parseTimeToMinutes(lesson.end_time);
     if (start === null || end === null) {
@@ -376,7 +377,13 @@ async function onNextClass({ env, chatId, user, language }) {
     }
 
     if (now.nowMinutes >= start && now.nowMinutes < end) {
-      payload = { type: 'current', lesson, minutesLeft: end - now.nowMinutes };
+      const nextLesson = lessons[i + 1] ?? null;
+      payload = {
+        type: nextLesson ? 'current_with_next' : 'current',
+        lesson,
+        minutesLeft: end - now.nowMinutes,
+        nextLesson
+      };
       break;
     }
 

@@ -91,6 +91,19 @@ export function formatNextClass(language, payload) {
     return t(language, 'schedule.noMoreToday');
   }
 
+  if (payload.type === 'current_with_next') {
+    const currentTitle = t(language, 'schedule.currentClassTitle');
+    const currentBlock = formatSingleLessonDetails(payload.lesson);
+    const currentStatus = t(language, 'schedule.statusEndsIn', {
+      time: minutesToHuman(payload.minutesLeft, language)
+    });
+
+    const nextTitle = t(language, 'schedule.nextClassTitle');
+    const nextBlock = formatSingleLessonDetails(payload.nextLesson);
+
+    return `${currentTitle}\n\n${currentBlock}\n\n${currentStatus}\n\n${nextTitle}\n\n${nextBlock}`;
+  }
+
   const title = payload.type === 'current'
     ? t(language, 'schedule.currentClassTitle')
     : t(language, 'schedule.nextClassTitle');
