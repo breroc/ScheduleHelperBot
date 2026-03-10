@@ -65,14 +65,8 @@ export function formatFullWeek(language, lessons) {
     }
 
     const dayTitle = `<b>${escapeHtml(t(language, `weekdays.${weekday}`))}</b>`;
-    const lines = dayLessons.map((lesson, index) => {
-      const prefix = numberEmoji(index);
-      const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
-      const subject = escapeHtml(lesson.subject || '-');
-      return `${prefix} ${range} — ${subject}`;
-    });
-
-    dayBlocks.push(`${dayTitle}\n${lines.join('\n')}`);
+    const lessonBlocks = dayLessons.map((lesson, index) => formatWeekLessonBlock(lesson, index));
+    dayBlocks.push(`${dayTitle}\n\n${lessonBlocks.join('\n\n')}`);
   }
 
   if (!dayBlocks.length) {
@@ -376,6 +370,23 @@ function formatLessonBlock(lesson, index, statusLine) {
     lines.push(statusLine);
   }
 
+  return lines.join('\n');
+}
+
+function formatWeekLessonBlock(lesson, index) {
+  const lines = [];
+  lines.push(`┌ ${numberEmoji(index)} ${escapeHtml(toTimeRange(lesson.start_time, lesson.end_time))}`);
+  lines.push(`│ ${escapeHtml(lesson.subject || '-')}`);
+
+  if (lesson.teacher) {
+    lines.push(`│ 👨‍🏫 ${escapeHtml(lesson.teacher)}`);
+  }
+
+  if (lesson.classroom) {
+    lines.push(`│ 📍 ${escapeHtml(lesson.classroom)}`);
+  }
+
+  lines.push('└');
   return lines.join('\n');
 }
 
