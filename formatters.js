@@ -1,6 +1,9 @@
 import { t } from './translations.js';
 import {
+  CONFIG,
   escapeHtml,
+  getNowContext,
+  getZonedDateParts,
   getLessonStatus,
   getWeatherAdvice,
   getWeatherPresentation,
@@ -262,7 +265,7 @@ export function formatAdminUsersByGroupMessages(language, byGroupMembers) {
     const members = Array.isArray(group.members) ? group.members : [];
     const memberLines = members.length
       ? members.map((member) => {
-        const lastSeen = normalizeDateTime(member.last_seen_at);
+        const lastSeen = normalizeDateTime(member.last_seen_at, language);
         const username = normalizeUsername(member.tg_username);
         if (username) {
           return formatAdminUserLine(language, `@${escapeHtml(username)}`, member.chat_id, lastSeen);
@@ -336,8 +339,8 @@ export function formatAdminInactiveUsersMessage(language, inactiveUsers) {
     if (user.group_name) {
       meta.push(user.group_name);
     }
-    const lastSeen = normalizeDateTime(user.last_seen_at);
-    const deactivatedAt = normalizeDateTime(user.deactivated_at);
+    const lastSeen = normalizeDateTime(user.last_seen_at, language);
+    const deactivatedAt = normalizeDateTime(user.deactivated_at, language);
     if (lastSeen) {
       meta.push(`${t(language, 'admin.lastSeen')}: ${escapeHtml(lastSeen)}`);
     }
@@ -361,13 +364,37 @@ function normalizeUsername(username) {
   return value.startsWith('@') ? value.slice(1) : value;
 }
 
-function normalizeDateTime(value) {
-  const text = String(value ?? '').trim();
-  if (!text) {
+function normalizeDateTime(value, language) {
+  const date = parseDatabaseDate(value);
+  if (!date) {
     return '';
   }
 
-  return text.replace('T', ' ').replace(/\.\d+Z?$/, '').replace(/Z$/, '');
+  const now = getNowContext(new Date(), CONFIG.TIMEZONE).zoned;
+  const target = getZonedDateParts(date, CONFIG.TIMEZONE);
+  const dayDiff = getDayDiff(now, target);
+  const timeText = `${String(target.hour).padStart(2, '0')}:${String(target.minute).padStart(2, '0')}`;
+
+  if (dayDiff === 0) {
+    return language === 'ru' ? `сегодня ${timeText}` : `today ${timeText}`;
+  }
+
+  if (dayDiff === 1) {
+    return language === 'ru' ? 'вчера' : 'yesterday';
+  }
+
+  if (dayDiff === 2) {
+    return language === 'ru' ? 'позавчера' : 'day before yesterday';
+  }
+
+  if (dayDiff > 2) {
+    if (language === 'ru') {
+      return `${dayDiff} ${formatRussianDays(dayDiff)} назад`;
+    }
+    return `${dayDiff} days ago`;
+  }
+
+  return `${target.year}-${String(target.month).padStart(2, '0')}-${String(target.day).padStart(2, '0')} ${timeText}`;
 }
 
 function formatAdminUserLine(language, identity, meta, lastSeen) {
@@ -376,6 +403,53 @@ function formatAdminUserLine(language, identity, meta, lastSeen) {
     parts.push(`${t(language, 'admin.lastSeen')}: ${escapeHtml(lastSeen)}`);
   }
   return `• ${identity} (${parts.join(', ')})`;
+}
+
+function parseDatabaseDate(value) {
+  const text = String(value ?? '').trim();
+  if (!text) {
+    return null;
+  }
+
+  const normalized = text
+    .replace('T', ' ')
+    .replace(/\.\d+Z?$/, '')
+    .replace(/Z$/, '');
+  const match = normalized.match(
+    /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/
+  );
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, minute, second = '00'] = match;
+  return new Date(Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second)
+  ));
+}
+
+function getDayDiff(currentParts, targetParts) {
+  const currentDay = Date.UTC(currentParts.year, currentParts.month - 1, currentParts.day);
+  const targetDay = Date.UTC(targetParts.year, targetParts.month - 1, targetParts.day);
+  return Math.round((currentDay - targetDay) / (24 * 60 * 60 * 1000));
+}
+
+function formatRussianDays(days) {
+  const mod10 = days % 10;
+  const mod100 = days % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return 'день';
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return 'дня';
+  }
+  return 'дней';
 }
 
 export function formatAdminDailyReport(language, dateKey, dailyStats) {
