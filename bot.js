@@ -581,7 +581,105 @@ async function handleCallbackQuery(query, env) {
     }
 
     if (data === 'settings:notes') {
-      await sendNotesMenu(env, chatId, language, user);
+      await renderInlineNotesMenu(env, chatId, messageId, language, user);
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data === 'settings:notes:back') {
+      await renderInlineSettingsMenu(env, chatId, messageId, language, user);
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data === 'settings:notes:menu') {
+      await renderInlineNotesMenu(env, chatId, messageId, language, user);
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data === 'settings:notes:add') {
+      await renderInlineNoteWeekdayMenu(env, chatId, messageId, language, user, 'add');
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data === 'settings:notes:view') {
+      await renderInlineNotesOverview(env, chatId, messageId, language, user);
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data === 'settings:notes:delete') {
+      await renderInlineNoteWeekdayMenu(env, chatId, messageId, language, user, 'delete');
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data.startsWith('settings:notes:add:day:')) {
+      const weekday = Number(data.slice('settings:notes:add:day:'.length));
+      if (!Number.isFinite(weekday)) {
+        await answerCallbackQuery(env, query.id);
+        return;
+      }
+      await renderInlineNoteLessonMenu(env, chatId, messageId, language, user, weekday, 'add');
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data.startsWith('settings:notes:delete:day:')) {
+      const weekday = Number(data.slice('settings:notes:delete:day:'.length));
+      if (!Number.isFinite(weekday)) {
+        await answerCallbackQuery(env, query.id);
+        return;
+      }
+      await renderInlineNoteLessonMenu(env, chatId, messageId, language, user, weekday, 'delete');
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data.startsWith('settings:notes:add:lesson:')) {
+      const payload = data.slice('settings:notes:add:lesson:'.length);
+      const [weekdayRaw, lessonNumberRaw] = payload.split(':');
+      const weekday = Number(weekdayRaw);
+      const lessonNumber = Number(lessonNumberRaw);
+      if (!Number.isFinite(weekday) || !Number.isFinite(lessonNumber)) {
+        await answerCallbackQuery(env, query.id);
+        return;
+      }
+
+      const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, weekday);
+      const selectedLesson = lessons.find((lesson) => Number(lesson.lesson_number) === lessonNumber);
+      if (!selectedLesson) {
+        await answerCallbackQuery(env, query.id);
+        return;
+      }
+
+      await setUserNoteFlow(env.DB, chatId, 'notes:add:text', weekday, lessonNumber);
+      await editOrSendMessage(env, chatId, messageId, t(language, 'notes.sendText', {
+        lesson: escapeHtml(buildLessonSelectionLabel(selectedLesson)),
+        day: escapeHtml(t(language, `weekdays.${weekday}`))
+      }), {
+        reply_markup: inlineNoteTextKeyboard(language)
+      });
+      await answerCallbackQuery(env, query.id);
+      return;
+    }
+
+    if (data.startsWith('settings:notes:delete:lesson:')) {
+      const payload = data.slice('settings:notes:delete:lesson:'.length);
+      const [weekdayRaw, lessonNumberRaw] = payload.split(':');
+      const weekday = Number(weekdayRaw);
+      const lessonNumber = Number(lessonNumberRaw);
+      if (!Number.isFinite(weekday) || !Number.isFinite(lessonNumber)) {
+        await answerCallbackQuery(env, query.id);
+        return;
+      }
+
+      await deleteLessonNote(env.DB, chatId, user.group_name, weekday, lessonNumber);
+      await renderInlineNotesMenu(env, chatId, messageId, language, user, {
+        prefixText: t(language, 'notes.deleted')
+      });
       await answerCallbackQuery(env, query.id);
       return;
     }
@@ -1387,6 +1485,35 @@ async function sendNotesMenu(env, chatId, language, user, prefixText = '') {
   });
 }
 
+async function renderInlineNotesMenu(env, chatId, messageId, language, user, options = {}) {
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  await clearUserNoteFlow(env.DB, chatId);
+  const prefixText = String(options.prefixText ?? '').trim();
+  const body = t(language, 'notes.menuTitle', { group: escapeHtml(user.group_name) });
+  const text = prefixText ? `${prefixText}\n\n${body}` : body;
+  await editOrSendMessage(env, chatId, messageId, text, {
+    reply_markup: inlineNotesMenuKeyboard(language)
+  });
+}
+
+async function renderInlineNotesOverview(env, chatId, messageId, language, user) {
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const lessons = await getWeekLessonsByGroup(env.DB, user.group_name);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
+  await clearUserNoteFlow(env.DB, chatId);
+  await editOrSendMessage(env, chatId, messageId, formatLessonNotesOverview(language, user.group_name, lessonsWithNotes), {
+    reply_markup: inlineNotesOverviewKeyboard(language)
+  });
+}
+
 async function sendNoteWeekdayPrompt(env, chatId, language, user, mode) {
   if (!user?.group_name) {
     await sendNoGroupSelected(env, chatId, language);
@@ -1400,6 +1527,22 @@ async function sendNoteWeekdayPrompt(env, chatId, language, user, mode) {
     : t(language, 'notes.chooseDayAdd');
   await sendMessage(env, chatId, text, {
     reply_markup: noteWeekdayKeyboard(language)
+  });
+}
+
+async function renderInlineNoteWeekdayMenu(env, chatId, messageId, language, user, mode) {
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const step = mode === 'delete' ? 'notes:delete:day' : 'notes:add:day';
+  await setUserNoteFlow(env.DB, chatId, step, null, null);
+  const text = mode === 'delete'
+    ? t(language, 'notes.chooseDayDelete')
+    : t(language, 'notes.chooseDayAdd');
+  await editOrSendMessage(env, chatId, messageId, text, {
+    reply_markup: inlineNoteWeekdayKeyboard(language, mode)
   });
 }
 
@@ -1435,6 +1578,41 @@ async function sendNoteLessonPrompt(env, chatId, language, user, weekday, mode) 
     : t(language, 'notes.chooseLessonAdd', { day: escapeHtml(t(language, `weekdays.${weekday}`)) });
   await sendMessage(env, chatId, text, {
     reply_markup: noteLessonKeyboard(language, lessonsForSelection)
+  });
+}
+
+async function renderInlineNoteLessonMenu(env, chatId, messageId, language, user, weekday, mode) {
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, weekday);
+  if (!lessons.length) {
+    const prompt = mode === 'delete'
+      ? t(language, 'notes.noLessonsForDeleteDay')
+      : t(language, 'notes.noLessonsForDay');
+    await renderInlineNoteWeekdayMenu(env, chatId, messageId, language, user, mode);
+    await sendMessage(env, chatId, prompt, {
+      reply_markup: noteWeekdayKeyboard(language)
+    });
+    return;
+  }
+
+  const lessonsForSelection = mode === 'delete'
+    ? (await attachLessonNotes(env.DB, chatId, user.group_name, lessons)).filter((lesson) => lesson.note)
+    : lessons;
+
+  if (!lessonsForSelection.length) {
+    await setUserNoteFlow(env.DB, chatId, 'notes:delete:day', null, null);
+    await editOrSendMessage(env, chatId, messageId, t(language, 'notes.noNotesForDay'), {
+      reply_markup: inlineNoteWeekdayKeyboard(language, mode)
+    });
+    return;
+  }
+
+  const step = mode === 'delete' ? 'notes:delete:lesson' : 'notes:add:lesson';
+  await setUserNoteFlow(env.DB, chatId, step, weekday, null);
+  const text = mode === 'delete'
+    ? t(language, 'notes.chooseLessonDelete', { day: escapeHtml(t(language, `weekdays.${weekday}`)) })
+    : t(language, 'notes.chooseLessonAdd', { day: escapeHtml(t(language, `weekdays.${weekday}`)) });
+  await editOrSendMessage(env, chatId, messageId, text, {
+    reply_markup: inlineNoteLessonKeyboard(language, lessonsForSelection, mode, weekday)
   });
 }
 
@@ -1754,6 +1932,25 @@ function notesMenuKeyboard(language) {
   };
 }
 
+function inlineNotesMenuKeyboard(language) {
+  const menu = getLocale(language).menu;
+  const notes = getLocale(language).notes;
+  return {
+    inline_keyboard: [
+      [
+        { text: notes.add, callback_data: 'settings:notes:add' },
+        { text: notes.view, callback_data: 'settings:notes:view' }
+      ],
+      [
+        { text: notes.delete, callback_data: 'settings:notes:delete' }
+      ],
+      [
+        { text: menu.back, callback_data: 'settings:notes:back' }
+      ]
+    ]
+  };
+}
+
 function noteWeekdayKeyboard(language) {
   const menu = getLocale(language).menu;
   const rows = [];
@@ -1771,6 +1968,28 @@ function noteWeekdayKeyboard(language) {
   };
 }
 
+function inlineNoteWeekdayKeyboard(language, mode) {
+  const rows = [];
+  for (let weekday = 1; weekday <= 7; weekday += 2) {
+    const row = [
+      {
+        text: buildWeekdayChoiceLabel(language, weekday),
+        callback_data: `settings:notes:${mode}:day:${weekday}`
+      }
+    ];
+    if (weekday + 1 <= 7) {
+      row.push({
+        text: buildWeekdayChoiceLabel(language, weekday + 1),
+        callback_data: `settings:notes:${mode}:day:${weekday + 1}`
+      });
+    }
+    rows.push(row);
+  }
+
+  rows.push([{ text: getLocale(language).menu.back, callback_data: 'settings:notes:menu' }]);
+  return { inline_keyboard: rows };
+}
+
 function noteLessonKeyboard(language, lessons = []) {
   const menu = getLocale(language).menu;
   const rows = lessons.map((lesson) => [buildLessonSelectionLabel(lesson)]);
@@ -1780,11 +1999,36 @@ function noteLessonKeyboard(language, lessons = []) {
   };
 }
 
+function inlineNoteLessonKeyboard(language, lessons = [], mode, weekday) {
+  const rows = lessons.map((lesson) => [{
+    text: buildLessonSelectionLabel(lesson),
+    callback_data: `settings:notes:${mode}:lesson:${weekday}:${lesson.lesson_number}`
+  }]);
+
+  rows.push([{ text: getLocale(language).menu.back, callback_data: `settings:notes:${mode}` }]);
+
+  return { inline_keyboard: rows };
+}
+
 function noteTextKeyboard(language) {
   const menu = getLocale(language).menu;
   return {
     keyboard: [[menu.back]],
     resize_keyboard: true
+  };
+}
+
+function inlineNoteTextKeyboard(language) {
+  const menu = getLocale(language).menu;
+  return {
+    inline_keyboard: [[{ text: menu.back, callback_data: 'settings:notes:menu' }]]
+  };
+}
+
+function inlineNotesOverviewKeyboard(language) {
+  const menu = getLocale(language).menu;
+  return {
+    inline_keyboard: [[{ text: menu.back, callback_data: 'settings:notes:menu' }]]
   };
 }
 
