@@ -35,6 +35,18 @@ const USER_COLUMN_MIGRATIONS = [
     sql: 'ALTER TABLE users ADD COLUMN favorite_groups TEXT'
   },
   {
+    name: 'note_flow_step',
+    sql: 'ALTER TABLE users ADD COLUMN note_flow_step TEXT'
+  },
+  {
+    name: 'note_flow_weekday',
+    sql: 'ALTER TABLE users ADD COLUMN note_flow_weekday INTEGER'
+  },
+  {
+    name: 'note_flow_lesson_number',
+    sql: 'ALTER TABLE users ADD COLUMN note_flow_lesson_number INTEGER'
+  },
+  {
     name: 'morning_time',
     sql: `ALTER TABLE users ADD COLUMN morning_time TEXT NOT NULL DEFAULT '${CONFIG.DEFAULT_MORNING_TIME}'`
   },
@@ -101,6 +113,14 @@ async function migrateSchema(db) {
     'CREATE TABLE IF NOT EXISTS delivery_stats (date_key TEXT NOT NULL, kind TEXT NOT NULL, sent_count INTEGER NOT NULL DEFAULT 0, failed_count INTEGER NOT NULL DEFAULT 0, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (date_key, kind))'
   );
   await runSqlSafe(db, 'CREATE INDEX IF NOT EXISTS idx_delivery_stats_date_key ON delivery_stats(date_key)');
+  await runSqlSafe(
+    db,
+    'CREATE TABLE IF NOT EXISTS lesson_notes (id INTEGER PRIMARY KEY AUTOINCREMENT, chat_id INTEGER NOT NULL, group_name TEXT NOT NULL, weekday INTEGER NOT NULL, lesson_number INTEGER NOT NULL, note TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(chat_id, group_name, weekday, lesson_number))'
+  );
+  await runSqlSafe(
+    db,
+    'CREATE INDEX IF NOT EXISTS idx_lesson_notes_lookup ON lesson_notes(chat_id, group_name, weekday, lesson_number)'
+  );
 }
 
 async function getTableColumns(db, tableName) {
@@ -173,6 +193,9 @@ export async function getUser(db, chatId) {
     chat_id: Number(user.chat_id),
     group_name: user.group_name ?? null,
     favorite_groups: parseFavoriteGroups(user.favorite_groups),
+    note_flow_step: user.note_flow_step ?? null,
+    note_flow_weekday: normalizeNullableNumber(user.note_flow_weekday),
+    note_flow_lesson_number: normalizeNullableNumber(user.note_flow_lesson_number),
     language: user.language ?? CONFIG.DEFAULT_LANGUAGE,
     notifications_enabled: Number(user.notifications_enabled ?? 1),
     reminder_minutes: Number(user.reminder_minutes ?? CONFIG.DEFAULT_REMINDER_MINUTES),
@@ -216,6 +239,22 @@ export async function setUserFavoriteGroups(db, chatId, favoriteGroups) {
     .prepare('UPDATE users SET favorite_groups = ? WHERE chat_id = ?')
     .bind(serializeFavoriteGroups(favoriteGroups), chatId)
     .run();
+}
+
+export async function setUserNoteFlow(db, chatId, step = null, weekday = null, lessonNumber = null) {
+  await db
+    .prepare('UPDATE users SET note_flow_step = ?, note_flow_weekday = ?, note_flow_lesson_number = ? WHERE chat_id = ?')
+    .bind(
+      normalizeOptionalText(step),
+      normalizeNullableNumber(weekday),
+      normalizeNullableNumber(lessonNumber),
+      chatId
+    )
+    .run();
+}
+
+export async function clearUserNoteFlow(db, chatId) {
+  await setUserNoteFlow(db, chatId, null, null, null);
 }
 
 export async function setUserLanguage(db, chatId, language) {
@@ -359,6 +398,94 @@ export async function getUsersForMorning(db) {
     morning_time: normalizeMorningTime(row.morning_time),
     last_morning_sent: row.last_morning_sent ?? null
   }));
+}
+
+export async function upsertLessonNote(db, chatId, groupName, weekday, lessonNumber, note) {
+  const normalizedNote = normalizeOptionalText(note);
+  if (!normalizedNote) {
+    return false;
+  }
+
+  try {
+    await db
+      .prepare(
+        'INSERT INTO lesson_notes (chat_id, group_name, weekday, lesson_number, note) VALUES (?, ?, ?, ?, ?) ON CONFLICT(chat_id, group_name, weekday, lesson_number) DO UPDATE SET note = excluded.note, updated_at = CURRENT_TIMESTAMP'
+      )
+      .bind(chatId, groupName, weekday, lessonNumber, normalizedNote)
+      .run();
+    return true;
+  } catch (error) {
+    console.error('upsert_lesson_note_error', {
+      chatId,
+      groupName,
+      weekday,
+      lessonNumber,
+      error: String(error)
+    });
+    return false;
+  }
+}
+
+export async function getLessonNote(db, chatId, groupName, weekday, lessonNumber) {
+  try {
+    const row = await db
+      .prepare(
+        'SELECT note FROM lesson_notes WHERE chat_id = ? AND group_name = ? AND weekday = ? AND lesson_number = ? LIMIT 1'
+      )
+      .bind(chatId, groupName, weekday, lessonNumber)
+      .first();
+    return normalizeOptionalText(row?.note);
+  } catch (error) {
+    console.error('get_lesson_note_error', {
+      chatId,
+      groupName,
+      weekday,
+      lessonNumber,
+      error: String(error)
+    });
+    return null;
+  }
+}
+
+export async function getLessonNotesForUserGroup(db, chatId, groupName) {
+  try {
+    const response = await db
+      .prepare(
+        'SELECT weekday, lesson_number, note FROM lesson_notes WHERE chat_id = ? AND group_name = ? ORDER BY weekday ASC, lesson_number ASC'
+      )
+      .bind(chatId, groupName)
+      .all();
+
+    return (response.results ?? []).map((row) => ({
+      weekday: normalizeNullableNumber(row.weekday),
+      lesson_number: normalizeNullableNumber(row.lesson_number),
+      note: normalizeOptionalText(row.note)
+    })).filter((row) => Number.isFinite(row.weekday) && Number.isFinite(row.lesson_number) && row.note);
+  } catch (error) {
+    console.error('get_lesson_notes_error', { chatId, groupName, error: String(error) });
+    return [];
+  }
+}
+
+export async function deleteLessonNote(db, chatId, groupName, weekday, lessonNumber) {
+  try {
+    const result = await db
+      .prepare(
+        'DELETE FROM lesson_notes WHERE chat_id = ? AND group_name = ? AND weekday = ? AND lesson_number = ?'
+      )
+      .bind(chatId, groupName, weekday, lessonNumber)
+      .run();
+    return Number(result?.meta?.changes ?? 0);
+  } catch (error) {
+    console.error('delete_lesson_note_error', {
+      chatId,
+      groupName,
+      weekday,
+      lessonNumber,
+      error: String(error)
+    });
+    return 0;
+  }
 }
 
 export async function getUsersForReminders(db) {

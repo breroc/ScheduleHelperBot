@@ -11,6 +11,7 @@ const TRANSLATIONS = {
       notifications: '🔔 Notifications',
       muteToday: '🔕 Mute today',
       favoritesManage: '⭐ Manage favorites',
+      notes: '📝 Notes',
       morningTime: '🕗 Morning time',
       morningToggle: '🌅 Daily updates',
       mySettings: '🧾 My settings',
@@ -91,6 +92,28 @@ const TRANSLATIONS = {
       mutedToday: 'Today',
       notMuted: 'No'
     },
+    notes: {
+      menuTitle: '📝 <b>Lesson notes</b>\n\nCurrent group: <b>{group}</b>',
+      listTitle: '📝 <b>Saved notes for {group}</b>',
+      add: '➕ Add note',
+      view: '🗂 My notes',
+      delete: '🗑 Delete note',
+      chooseDayAdd: 'Choose a weekday for the note:',
+      chooseDayDelete: 'Choose a weekday to delete a note:',
+      chooseLessonAdd: 'Choose a lesson on <b>{day}</b>:',
+      chooseLessonDelete: 'Choose a lesson with a note on <b>{day}</b>:',
+      sendText: 'Send the note text for <b>{day}</b>:\n\n<b>{lesson}</b>',
+      saved: '✅ Note saved.',
+      saveFailed: '⚠️ Could not save the note right now.',
+      deleted: '🗑 Note deleted.',
+      none: 'No notes yet.',
+      noLessonsForDay: 'No lessons on that day.',
+      noLessonsForDeleteDay: 'No lessons on that day.',
+      noNotesForDay: 'No saved notes for that day.',
+      empty: 'Send non-empty note text.',
+      tooLong: 'Note is too long. Limit: 200 characters.',
+      flowReset: '⚠️ Note flow was reset. Start again.'
+    },
     weather: {
       title: 'Weather in Hangzhou:',
       unavailable: 'Weather is temporarily unavailable.',
@@ -160,7 +183,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Help</b>',
-      body: 'This bot helps you check your class schedule, follow the next lesson, manage reminders, save favorite groups and receive morning updates.\n\nButtons:\n📅 Today - schedule for today\n📆 Tomorrow - schedule for tomorrow\n📖 Full week - full weekly schedule\n📚 Next class - current or upcoming lesson\n⭐ Favorites - quick view for favorite groups\n⚙️ Settings - language, reminders, favorites and personal options\n\nSettings buttons:\n🌐 Language - switch RU / EN\n🔔 Notifications - choose reminder time\n🔕 Mute today - pause reminders until tomorrow\n⭐ Manage favorites - pin up to 2 groups\n🕗 Morning time - choose 07:00 / 07:30 / 08:00\n🧾 My settings - view current settings\n🔄 Change group - change your main group\n🌅 Daily updates - turn morning messages on or off\n\nCommands:\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n/mutetoday - mute reminders until tomorrow',
+      body: 'This bot helps you check your class schedule, follow the next lesson, manage reminders, save favorite groups, keep lesson notes and receive morning updates.\n\nButtons:\n📅 Today - schedule for today\n📆 Tomorrow - schedule for tomorrow\n📖 Full week - full weekly schedule\n📚 Next class - current or upcoming lesson\n⭐ Favorites - quick view for favorite groups\n⚙️ Settings - language, reminders, favorites and personal options\n\nSettings buttons:\n🌐 Language - switch RU / EN\n🔔 Notifications - choose reminder time\n🔕 Mute today - pause reminders until tomorrow\n⭐ Manage favorites - pin up to 2 groups\n📝 Notes - save a note for a specific weekday and lesson\n🕗 Morning time - choose 07:00 / 07:30 / 08:00\n🧾 My settings - view current settings\n🔄 Change group - change your main group\n🌅 Daily updates - turn morning messages on or off\n\nCommands:\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n/mutetoday - mute reminders until tomorrow',
       admin: '\n\nAdmin:\n/stats - bot stats\n/user 123456789 - user card\n/inactive - list inactive users\n/cleanupinactive - remove inactive users from database\n/broadcast text - send to all users\n/broadcastgroup 2-7 text - send to one group'
     },
     weekdays: {
@@ -189,6 +212,7 @@ const TRANSLATIONS = {
       notifications: '🔔 Уведомления',
       muteToday: '🔕 На сегодня',
       favoritesManage: '⭐ Настроить избранное',
+      notes: '📝 Заметки',
       morningTime: '🕗 Время утра',
       morningToggle: '🌅 Ежедневные сообщения',
       mySettings: '🧾 Мои настройки',
@@ -269,6 +293,28 @@ const TRANSLATIONS = {
       mutedToday: 'На сегодня',
       notMuted: 'Нет'
     },
+    notes: {
+      menuTitle: '📝 <b>Заметки к парам</b>\n\nТекущая группа: <b>{group}</b>',
+      listTitle: '📝 <b>Сохранённые заметки для {group}</b>',
+      add: '➕ Добавить заметку',
+      view: '🗂 Мои заметки',
+      delete: '🗑 Удалить заметку',
+      chooseDayAdd: 'Выберите день недели для заметки:',
+      chooseDayDelete: 'Выберите день недели для удаления заметки:',
+      chooseLessonAdd: 'Выберите пару на <b>{day}</b>:',
+      chooseLessonDelete: 'Выберите пару с заметкой на <b>{day}</b>:',
+      sendText: 'Отправьте текст заметки для <b>{day}</b>:\n\n<b>{lesson}</b>',
+      saved: '✅ Заметка сохранена.',
+      saveFailed: '⚠️ Сейчас не удалось сохранить заметку.',
+      deleted: '🗑 Заметка удалена.',
+      none: 'Заметок пока нет.',
+      noLessonsForDay: 'На этот день пар нет.',
+      noLessonsForDeleteDay: 'На этот день пар нет.',
+      noNotesForDay: 'На этот день заметок нет.',
+      empty: 'Отправьте непустой текст заметки.',
+      tooLong: 'Заметка слишком длинная. Максимум 200 символов.',
+      flowReset: '⚠️ Режим заметок был сброшен. Начните заново.'
+    },
     weather: {
       title: 'Погода в Ханчжоу:',
       unavailable: 'Погода временно недоступна.',
@@ -338,7 +384,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Помощь</b>',
-      body: 'Бот помогает быстро смотреть расписание, видеть ближайшую пару, получать напоминания, сохранять избранные группы и получать утренние сообщения.\n\nКнопки:\n📅 Сегодня - расписание на сегодня\n📆 Завтра - расписание на завтра\n📖 Вся неделя - полное расписание на неделю\n📚 Следующая пара - текущая или ближайшая пара\n⭐ Избранное - быстрый просмотр закреплённых групп\n⚙️ Настройки - язык, напоминания, избранное и личные параметры\n\nКнопки в настройках:\n🌐 Язык - переключение RU / EN\n🔔 Уведомления - выбор времени напоминаний\n🔕 На сегодня - выключить напоминания до завтра\n⭐ Настроить избранное - закрепить до 2 групп\n🕗 Время утра - выбрать 07:00 / 07:30 / 08:00\n🧾 Мои настройки - посмотреть текущие настройки\n🔄 Сменить группу - сменить основную группу\n🌅 Ежедневные сообщения - включить или выключить утренние сообщения\n\nКоманды:\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - настроить избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n/mutetoday - отключить напоминания до завтра',
+      body: 'Бот помогает быстро смотреть расписание, видеть ближайшую пару, получать напоминания, сохранять избранные группы, добавлять заметки к парам и получать утренние сообщения.\n\nКнопки:\n📅 Сегодня - расписание на сегодня\n📆 Завтра - расписание на завтра\n📖 Вся неделя - полное расписание на неделю\n📚 Следующая пара - текущая или ближайшая пара\n⭐ Избранное - быстрый просмотр закреплённых групп\n⚙️ Настройки - язык, напоминания, избранное и личные параметры\n\nКнопки в настройках:\n🌐 Язык - переключение RU / EN\n🔔 Уведомления - выбор времени напоминаний\n🔕 На сегодня - выключить напоминания до завтра\n⭐ Настроить избранное - закрепить до 2 групп\n📝 Заметки - добавить заметку к конкретной паре\n🕗 Время утра - выбрать 07:00 / 07:30 / 08:00\n🧾 Мои настройки - посмотреть текущие настройки\n🔄 Сменить группу - сменить основную группу\n🌅 Ежедневные сообщения - включить или выключить утренние сообщения\n\nКоманды:\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - настроить избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n/mutetoday - отключить напоминания до завтра',
       admin: '\n\nАдмин:\n/stats - статистика\n/user 123456789 - карточка пользователя\n/inactive - список неактивных пользователей\n/cleanupinactive - удалить неактивных из базы\n/broadcast текст - рассылка всем\n/broadcastgroup 2-7 текст - рассылка одной группе'
     },
     weekdays: {

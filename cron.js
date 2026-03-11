@@ -1,5 +1,6 @@
 import {
   getDailyCronDeliveryStats,
+  getLessonNote,
   getLessonsByGroupAndWeekday,
   getUser,
   getUsersForEvening,
@@ -162,7 +163,17 @@ export async function runReminderCron(env) {
   }
 
   const results = await runInBatches(targets, async ({ user, dueLesson, reminderKey }) => {
-    const text = formatReminder(user.language, dueLesson.lesson, dueLesson.minutesLeft);
+    const note = await getLessonNote(
+      env.DB,
+      user.chat_id,
+      user.group_name,
+      now.zoned.weekday,
+      dueLesson.lesson.lesson_number
+    );
+    const text = formatReminder(user.language, {
+      ...dueLesson.lesson,
+      note
+    }, dueLesson.minutesLeft);
 
     try {
       await sendMessage(env, user.chat_id, text, {

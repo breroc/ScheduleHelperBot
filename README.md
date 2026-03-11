@@ -7,6 +7,7 @@ Production-like Telegram schedule bot on **Cloudflare Workers** with these featu
 - RU/EN language
 - reminder settings (5 min / 10 min / off)
 - pinned favorite groups
+- personal lesson notes via settings buttons
 - custom morning message time (`07:00`, `07:30`, `08:00`)
 - temporary reminder mute until tomorrow
 - my settings
@@ -64,10 +65,25 @@ ALTER TABLE users ADD COLUMN reminder_minutes INTEGER NOT NULL DEFAULT 10;
 ALTER TABLE users ADD COLUMN reminder_mute_until_date TEXT;
 ALTER TABLE users ADD COLUMN morning_enabled INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN favorite_groups TEXT;
+ALTER TABLE users ADD COLUMN note_flow_step TEXT;
+ALTER TABLE users ADD COLUMN note_flow_weekday INTEGER;
+ALTER TABLE users ADD COLUMN note_flow_lesson_number INTEGER;
 ALTER TABLE users ADD COLUMN morning_time TEXT NOT NULL DEFAULT '07:00';
 ALTER TABLE users ADD COLUMN last_morning_sent TEXT;
 ALTER TABLE users ADD COLUMN last_reminder_key TEXT;
 ALTER TABLE users ADD COLUMN last_evening_sent TEXT;
+
+CREATE TABLE IF NOT EXISTS lesson_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chat_id INTEGER NOT NULL,
+  group_name TEXT NOT NULL,
+  weekday INTEGER NOT NULL,
+  lesson_number INTEGER NOT NULL,
+  note TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(chat_id, group_name, weekday, lesson_number)
+);
 ```
 
 Notes:
@@ -137,6 +153,7 @@ Every 2 minutes:
 - checks users with notifications enabled
 - finds lessons near configured reminder time (5 or 10 min)
 - sends reminder once per lesson/user (`last_reminder_key` anti-duplicate)
+- includes personal lesson note if user saved one for that weekday and lesson
 
 ### Admin daily report cron (`5 12 * * *` UTC)
 At 20:05 Shanghai local time admin receives automatic report:

@@ -179,6 +179,44 @@ export function formatAdminUserCard(language, user) {
   return lines.join('\n');
 }
 
+export function formatLessonNotesOverview(language, groupName, lessons) {
+  const title = t(language, 'notes.listTitle', { group: escapeHtml(groupName || '-') });
+  const list = (Array.isArray(lessons) ? lessons : []).filter((lesson) => lesson?.note);
+  if (!list.length) {
+    return `${title}\n\n${t(language, 'notes.none')}`;
+  }
+
+  const byDay = new Map();
+  for (const lesson of list) {
+    if (!byDay.has(lesson.weekday)) {
+      byDay.set(lesson.weekday, []);
+    }
+    byDay.get(lesson.weekday).push(lesson);
+  }
+
+  const dayBlocks = [];
+  for (let weekday = 1; weekday <= 7; weekday += 1) {
+    const dayLessons = byDay.get(weekday);
+    if (!dayLessons?.length) {
+      continue;
+    }
+
+    const lines = [`<b>${escapeHtml(t(language, `weekdays.${weekday}`))}</b>`, ''];
+    for (const lesson of dayLessons) {
+      const range = escapeHtml(toTimeRange(lesson.start_time, lesson.end_time));
+      const subject = escapeHtml(lesson.subject || '-');
+      const note = escapeHtml(lesson.note || '');
+      const lessonNumber = Number.isFinite(Number(lesson.lesson_number)) ? `${lesson.lesson_number}.` : '-';
+      lines.push(`${lessonNumber} ${range} — ${subject}`);
+      lines.push(`📝 ${note}`);
+      lines.push('');
+    }
+    dayBlocks.push(lines.join('\n').trimEnd());
+  }
+
+  return `${title}\n\n${dayBlocks.join('\n\n')}`;
+}
+
 export function formatMorningMessage(language, payload) {
   const { weather, lessons, firstClassIn } = payload;
   const lines = [t(language, 'morning.title'), ''];
@@ -559,6 +597,10 @@ function formatSingleLessonDetails(lesson) {
     lines.push(`⏰ ${escapeHtml(range)}`);
   }
 
+  if (lesson.note) {
+    lines.push(`📝 ${escapeHtml(lesson.note)}`);
+  }
+
   return lines.join('\n');
 }
 
@@ -639,6 +681,10 @@ function formatLessonCardLines(lesson, index) {
 
   if (lesson.classroom) {
     lines.push(`📍 ${escapeHtml(lesson.classroom)}`);
+  }
+
+  if (lesson.note) {
+    lines.push(`📝 ${escapeHtml(lesson.note)}`);
   }
 
   return lines;

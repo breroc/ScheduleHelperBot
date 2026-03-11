@@ -1,14 +1,18 @@
 import {
+  clearUserNoteFlow,
   cleanupInactiveUsers,
+  deleteLessonNote,
   ensureUserWithMeta,
   getAllUsers,
   getDailyCronDeliveryStats,
+  getLessonNotesForUserGroup,
   getInactiveUsers,
   getLessonsByGroupAndWeekday,
   getStats,
   getUser,
   getUsersByGroup,
   markUserInactive,
+  setUserNoteFlow,
   setUserGroup,
   setUserFavoriteGroups,
   setUserLanguage,
@@ -16,6 +20,7 @@ import {
   setUserMorningTime,
   setUserReminderMuteUntilDate,
   setUserNotifications,
+  upsertLessonNote,
   getWeekLessonsByGroup
 } from './db.js';
 import {
@@ -25,6 +30,7 @@ import {
   formatAdminUsersByGroupMessages,
   formatFullWeek,
   formatHelp,
+  formatLessonNotesOverview,
   formatMySettings,
   formatNextClass,
   formatScheduleForToday,
@@ -85,6 +91,13 @@ export async function handleUpdate(update, env) {
     return;
   }
 
+  if (user?.note_flow_step) {
+    const handledNoteFlow = await tryHandleNoteFlowInput({ env, chatId, user, language, text });
+    if (handledNoteFlow) {
+      return;
+    }
+  }
+
   const favoriteGroupChoice = parseFavoriteGroupChoice(text);
   if (favoriteGroupChoice) {
     await onFavoriteToggle({ env, chatId, user, language, groupName: favoriteGroupChoice });
@@ -142,6 +155,18 @@ export async function handleUpdate(update, env) {
       return;
     case 'favoritesManage':
       await sendFavoritesPrompt(env, chatId, language, user);
+      return;
+    case 'notesMenu':
+      await sendNotesMenu(env, chatId, language, user);
+      return;
+    case 'notesAdd':
+      await sendNoteWeekdayPrompt(env, chatId, language, user, 'add');
+      return;
+    case 'notesView':
+      await onNotesView({ env, chatId, user, language });
+      return;
+    case 'notesDelete':
+      await sendNoteWeekdayPrompt(env, chatId, language, user, 'delete');
       return;
     case 'morningTime':
       await sendMorningTimePrompt(env, chatId, language, user);
@@ -356,8 +381,9 @@ async function onToday({ env, chatId, user, language }) {
 
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
 
-  await sendMainMenu(env, chatId, language, formatScheduleForToday(language, lessons, now.nowMinutes));
+  await sendMainMenu(env, chatId, language, formatScheduleForToday(language, lessonsWithNotes, now.nowMinutes));
 }
 
 async function onTodayCommand({ env, chatId, user, language, argsText }) {
@@ -381,7 +407,9 @@ async function onTodayCommand({ env, chatId, user, language, argsText }) {
 
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, targetGroup, now.zoned.weekday);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, targetGroup, lessons);
   let text = formatScheduleForToday(language, lessons, now.nowMinutes);
+  text = formatScheduleForToday(language, lessonsWithNotes, now.nowMinutes);
 
   if (requestedGroup) {
     text = prependQuickGroupHeader(language, targetGroup, text);
@@ -412,7 +440,8 @@ async function onTomorrowCommand({ env, chatId, user, language, argsText }) {
   const tomorrow = addDays(new Date(), 1);
   const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, targetGroup, parts.weekday);
-  let text = formatScheduleForTomorrow(language, lessons);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, targetGroup, lessons);
+  let text = formatScheduleForTomorrow(language, lessonsWithNotes);
 
   if (requestedGroup) {
     text = prependQuickGroupHeader(language, targetGroup, text);
@@ -430,8 +459,9 @@ async function onTomorrow({ env, chatId, user, language }) {
   const tomorrow = addDays(new Date(), 1);
   const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, parts.weekday);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
 
-  await sendMainMenu(env, chatId, language, formatScheduleForTomorrow(language, lessons));
+  await sendMainMenu(env, chatId, language, formatScheduleForTomorrow(language, lessonsWithNotes));
 }
 
 async function onWeekCommand({ env, chatId, user, language, argsText }) {
@@ -454,7 +484,8 @@ async function onWeekCommand({ env, chatId, user, language, argsText }) {
   }
 
   const lessons = await getWeekLessonsByGroup(env.DB, targetGroup);
-  let text = formatFullWeek(language, lessons);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, targetGroup, lessons);
+  let text = formatFullWeek(language, lessonsWithNotes);
 
   if (requestedGroup) {
     text = prependQuickGroupHeader(language, targetGroup, text);
@@ -470,7 +501,8 @@ async function onFullWeek({ env, chatId, user, language }) {
   }
 
   const lessons = await getWeekLessonsByGroup(env.DB, user.group_name);
-  await sendMainMenu(env, chatId, language, formatFullWeek(language, lessons));
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
+  await sendMainMenu(env, chatId, language, formatFullWeek(language, lessonsWithNotes));
 }
 
 async function onNextClass({ env, chatId, user, language }) {
@@ -481,10 +513,11 @@ async function onNextClass({ env, chatId, user, language }) {
 
   const now = getNowContext(new Date(), CONFIG.TIMEZONE);
   const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, now.zoned.weekday);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
 
   let payload = { type: 'none' };
-  for (let i = 0; i < lessons.length; i += 1) {
-    const lesson = lessons[i];
+  for (let i = 0; i < lessonsWithNotes.length; i += 1) {
+    const lesson = lessonsWithNotes[i];
     const start = parseTimeToMinutes(lesson.start_time);
     const end = parseTimeToMinutes(lesson.end_time);
     if (start === null || end === null) {
@@ -492,7 +525,7 @@ async function onNextClass({ env, chatId, user, language }) {
     }
 
     if (now.nowMinutes >= start && now.nowMinutes < end) {
-      const nextLesson = lessons[i + 1] ?? null;
+      const nextLesson = lessonsWithNotes[i + 1] ?? null;
       payload = {
         type: nextLesson ? 'current_with_next' : 'current',
         lesson,
@@ -773,7 +806,8 @@ async function onFavoriteQuickView({ env, chatId, user, language, groupName, vie
   if (viewType === 'today') {
     const now = getNowContext(new Date(), CONFIG.TIMEZONE);
     const lessons = await getLessonsByGroupAndWeekday(env.DB, groupName, now.zoned.weekday);
-    const text = prependQuickGroupHeader(language, groupName, formatScheduleForToday(language, lessons, now.nowMinutes));
+    const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, groupName, lessons);
+    const text = prependQuickGroupHeader(language, groupName, formatScheduleForToday(language, lessonsWithNotes, now.nowMinutes));
     await sendMessage(env, chatId, text, {
       reply_markup: favoritesViewKeyboard(language, favoriteGroups)
     });
@@ -784,7 +818,8 @@ async function onFavoriteQuickView({ env, chatId, user, language, groupName, vie
     const tomorrow = addDays(new Date(), 1);
     const parts = getZonedDateParts(tomorrow, CONFIG.TIMEZONE);
     const lessons = await getLessonsByGroupAndWeekday(env.DB, groupName, parts.weekday);
-    const text = prependQuickGroupHeader(language, groupName, formatScheduleForTomorrow(language, lessons));
+    const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, groupName, lessons);
+    const text = prependQuickGroupHeader(language, groupName, formatScheduleForTomorrow(language, lessonsWithNotes));
     await sendMessage(env, chatId, text, {
       reply_markup: favoritesViewKeyboard(language, favoriteGroups)
     });
@@ -792,9 +827,24 @@ async function onFavoriteQuickView({ env, chatId, user, language, groupName, vie
   }
 
   const lessons = await getWeekLessonsByGroup(env.DB, groupName);
-  const text = prependQuickGroupHeader(language, groupName, formatFullWeek(language, lessons));
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, groupName, lessons);
+  const text = prependQuickGroupHeader(language, groupName, formatFullWeek(language, lessonsWithNotes));
   await sendMessage(env, chatId, text, {
     reply_markup: favoritesViewKeyboard(language, favoriteGroups)
+  });
+}
+
+async function onNotesView({ env, chatId, user, language }) {
+  if (!user.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const lessons = await getWeekLessonsByGroup(env.DB, user.group_name);
+  const lessonsWithNotes = await attachLessonNotes(env.DB, chatId, user.group_name, lessons);
+  await clearUserNoteFlow(env.DB, chatId);
+  await sendMessage(env, chatId, formatLessonNotesOverview(language, user.group_name, lessonsWithNotes), {
+    reply_markup: notesMenuKeyboard(language)
   });
 }
 
@@ -829,6 +879,9 @@ function detectAction(text) {
   if (matchesMenuLabel(text, 'favoritesManage')) {
     return 'favoritesManage';
   }
+  if (matchesMenuLabel(text, 'notes')) {
+    return 'notesMenu';
+  }
   if (matchesMenuLabel(text, 'morningTime')) {
     return 'morningTime';
   }
@@ -858,6 +911,15 @@ function detectAction(text) {
   if (parseMorningTimeChoice(text)) {
     return 'morningTimeChoice';
   }
+  if (matchesNotesActionLabel(text, 'add')) {
+    return 'notesAdd';
+  }
+  if (matchesNotesActionLabel(text, 'view')) {
+    return 'notesView';
+  }
+  if (matchesNotesActionLabel(text, 'delete')) {
+    return 'notesDelete';
+  }
 
   return 'unknown';
 }
@@ -865,6 +927,15 @@ function detectAction(text) {
 function matchesMenuLabel(text, key) {
   for (const language of SUPPORTED_LANGUAGES) {
     if (getLocale(language).menu[key] === text) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function matchesNotesActionLabel(text, key) {
+  for (const language of SUPPORTED_LANGUAGES) {
+    if (getLocale(language).notes[key] === text) {
       return true;
     }
   }
@@ -948,6 +1019,172 @@ async function sendFavoritesViewPrompt(env, chatId, language, user) {
   });
 }
 
+async function sendNotesMenu(env, chatId, language, user, prefixText = '') {
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  await clearUserNoteFlow(env.DB, chatId);
+  const text = prefixText
+    ? `${prefixText}\n\n${t(language, 'notes.menuTitle', { group: escapeHtml(user.group_name) })}`
+    : t(language, 'notes.menuTitle', { group: escapeHtml(user.group_name) });
+  await sendMessage(env, chatId, text, {
+    reply_markup: notesMenuKeyboard(language)
+  });
+}
+
+async function sendNoteWeekdayPrompt(env, chatId, language, user, mode) {
+  if (!user?.group_name) {
+    await sendNoGroupSelected(env, chatId, language);
+    return;
+  }
+
+  const step = mode === 'delete' ? 'notes:delete:day' : 'notes:add:day';
+  await setUserNoteFlow(env.DB, chatId, step, null, null);
+  const text = mode === 'delete'
+    ? t(language, 'notes.chooseDayDelete')
+    : t(language, 'notes.chooseDayAdd');
+  await sendMessage(env, chatId, text, {
+    reply_markup: noteWeekdayKeyboard(language)
+  });
+}
+
+async function sendNoteLessonPrompt(env, chatId, language, user, weekday, mode) {
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, weekday);
+  if (!lessons.length) {
+    const prompt = mode === 'delete'
+      ? t(language, 'notes.noLessonsForDeleteDay')
+      : t(language, 'notes.noLessonsForDay');
+    await sendNoteWeekdayPrompt(env, chatId, language, user, mode);
+    await sendMessage(env, chatId, prompt, {
+      reply_markup: noteWeekdayKeyboard(language)
+    });
+    return;
+  }
+
+  const lessonsForSelection = mode === 'delete'
+    ? (await attachLessonNotes(env.DB, chatId, user.group_name, lessons)).filter((lesson) => lesson.note)
+    : lessons;
+
+  if (!lessonsForSelection.length) {
+    await setUserNoteFlow(env.DB, chatId, 'notes:delete:day', null, null);
+    await sendMessage(env, chatId, t(language, 'notes.noNotesForDay'), {
+      reply_markup: noteWeekdayKeyboard(language)
+    });
+    return;
+  }
+
+  const step = mode === 'delete' ? 'notes:delete:lesson' : 'notes:add:lesson';
+  await setUserNoteFlow(env.DB, chatId, step, weekday, null);
+  const text = mode === 'delete'
+    ? t(language, 'notes.chooseLessonDelete', { day: escapeHtml(t(language, `weekdays.${weekday}`)) })
+    : t(language, 'notes.chooseLessonAdd', { day: escapeHtml(t(language, `weekdays.${weekday}`)) });
+  await sendMessage(env, chatId, text, {
+    reply_markup: noteLessonKeyboard(language, lessonsForSelection)
+  });
+}
+
+async function tryHandleNoteFlowInput({ env, chatId, user, language, text }) {
+  const action = detectAction(text);
+  if (action === 'back') {
+    await sendNotesMenu(env, chatId, language, user);
+    return true;
+  }
+
+  switch (user.note_flow_step) {
+    case 'notes:add:day':
+      return onNoteDayInput({ env, chatId, user, language, text, mode: 'add' });
+    case 'notes:delete:day':
+      return onNoteDayInput({ env, chatId, user, language, text, mode: 'delete' });
+    case 'notes:add:lesson':
+      return onNoteLessonInput({ env, chatId, user, language, text, mode: 'add' });
+    case 'notes:delete:lesson':
+      return onNoteLessonInput({ env, chatId, user, language, text, mode: 'delete' });
+    case 'notes:add:text':
+      return onNoteTextInput({ env, chatId, user, language, text });
+    default:
+      return false;
+  }
+}
+
+async function onNoteDayInput({ env, chatId, user, language, text, mode }) {
+  const weekday = parseWeekdayChoice(text);
+  if (!weekday) {
+    return false;
+  }
+
+  await sendNoteLessonPrompt(env, chatId, language, user, weekday, mode);
+  return true;
+}
+
+async function onNoteLessonInput({ env, chatId, user, language, text, mode }) {
+  const weekday = Number(user.note_flow_weekday);
+  if (!Number.isFinite(weekday)) {
+    await sendNotesMenu(env, chatId, language, user, t(language, 'notes.flowReset'));
+    return true;
+  }
+
+  const lessons = await getLessonsByGroupAndWeekday(env.DB, user.group_name, weekday);
+  const lessonsForSelection = mode === 'delete'
+    ? (await attachLessonNotes(env.DB, chatId, user.group_name, lessons)).filter((lesson) => lesson.note)
+    : lessons;
+  const selectedLesson = findLessonBySelectionLabel(text, lessonsForSelection);
+  if (!selectedLesson) {
+    return false;
+  }
+
+  if (mode === 'delete') {
+    await deleteLessonNote(env.DB, chatId, user.group_name, weekday, selectedLesson.lesson_number);
+    await sendNotesMenu(env, chatId, language, user, t(language, 'notes.deleted'));
+    return true;
+  }
+
+  await setUserNoteFlow(env.DB, chatId, 'notes:add:text', weekday, selectedLesson.lesson_number);
+  const lessonLabel = buildLessonSelectionLabel(selectedLesson);
+  await sendMessage(env, chatId, t(language, 'notes.sendText', {
+    lesson: escapeHtml(lessonLabel),
+    day: escapeHtml(t(language, `weekdays.${weekday}`))
+  }), {
+    reply_markup: noteTextKeyboard(language)
+  });
+  return true;
+}
+
+async function onNoteTextInput({ env, chatId, user, language, text }) {
+  const note = String(text ?? '').trim();
+  if (!note) {
+    await sendMessage(env, chatId, t(language, 'notes.empty'), {
+      reply_markup: noteTextKeyboard(language)
+    });
+    return true;
+  }
+
+  if (note.length > 200) {
+    await sendMessage(env, chatId, t(language, 'notes.tooLong'), {
+      reply_markup: noteTextKeyboard(language)
+    });
+    return true;
+  }
+
+  const weekday = Number(user.note_flow_weekday);
+  const lessonNumber = Number(user.note_flow_lesson_number);
+  if (!user.group_name || !Number.isFinite(weekday) || !Number.isFinite(lessonNumber)) {
+    await sendNotesMenu(env, chatId, language, user, t(language, 'notes.flowReset'));
+    return true;
+  }
+
+  const saved = await upsertLessonNote(env.DB, chatId, user.group_name, weekday, lessonNumber, note);
+  await sendNotesMenu(
+    env,
+    chatId,
+    language,
+    user,
+    t(language, saved ? 'notes.saved' : 'notes.saveFailed')
+  );
+  return true;
+}
+
 async function sendMorningTimePrompt(env, chatId, language, user) {
   const currentValue = user?.morning_time || CONFIG.DEFAULT_MORNING_TIME;
   const text = `${t(language, 'common.pickMorningTime')}\n\n${t(language, 'settings.morningTime')}: <b>${escapeHtml(currentValue)}</b>`;
@@ -975,7 +1212,8 @@ function settingsKeyboard(language) {
       [menu.language, menu.notifications],
       [menu.muteToday, menu.morningToggle],
       [menu.favoritesManage, menu.morningTime],
-      [menu.mySettings, menu.changeGroup],
+      [menu.notes, menu.mySettings],
+      [menu.changeGroup],
       [menu.back]
     ],
     resize_keyboard: true
@@ -1043,6 +1281,53 @@ function morningTimeKeyboard(language, currentValue) {
 
   return {
     keyboard: [...rows, [menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function notesMenuKeyboard(language) {
+  const menu = getLocale(language).menu;
+  const notes = getLocale(language).notes;
+  return {
+    keyboard: [
+      [notes.add, notes.view],
+      [notes.delete],
+      [menu.settings]
+    ],
+    resize_keyboard: true
+  };
+}
+
+function noteWeekdayKeyboard(language) {
+  const menu = getLocale(language).menu;
+  const rows = [];
+  for (let weekday = 1; weekday <= 7; weekday += 2) {
+    const row = [buildWeekdayChoiceLabel(language, weekday)];
+    if (weekday + 1 <= 7) {
+      row.push(buildWeekdayChoiceLabel(language, weekday + 1));
+    }
+    rows.push(row);
+  }
+
+  return {
+    keyboard: [...rows, [menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function noteLessonKeyboard(language, lessons = []) {
+  const menu = getLocale(language).menu;
+  const rows = lessons.map((lesson) => [buildLessonSelectionLabel(lesson)]);
+  return {
+    keyboard: [...rows, [menu.back]],
+    resize_keyboard: true
+  };
+}
+
+function noteTextKeyboard(language) {
+  const menu = getLocale(language).menu;
+  return {
+    keyboard: [[menu.back]],
     resize_keyboard: true
   };
 }
@@ -1142,4 +1427,54 @@ function parseFavoriteViewChoice(text) {
   }
 
   return null;
+}
+
+function parseWeekdayChoice(text) {
+  const value = String(text ?? '').trim().replace(/^🗓\s*/, '');
+  for (let weekday = 1; weekday <= 7; weekday += 1) {
+    for (const language of SUPPORTED_LANGUAGES) {
+      if (value === t(language, `weekdays.${weekday}`)) {
+        return weekday;
+      }
+    }
+  }
+  return null;
+}
+
+function buildWeekdayChoiceLabel(language, weekday) {
+  return `🗓 ${t(language, `weekdays.${weekday}`)}`;
+}
+
+function buildLessonSelectionLabel(lesson) {
+  const lessonNumber = Number(lesson?.lesson_number);
+  const prefix = Number.isFinite(lessonNumber) ? `${lessonNumber}.` : '-';
+  const range = [lesson?.start_time, lesson?.end_time].filter(Boolean).join('-');
+  const subject = String(lesson?.subject ?? '').trim();
+  return subject ? `${prefix} ${range} — ${subject}` : `${prefix} ${range}`;
+}
+
+function findLessonBySelectionLabel(text, lessons = []) {
+  const value = String(text ?? '').trim();
+  return lessons.find((lesson) => buildLessonSelectionLabel(lesson) === value) ?? null;
+}
+
+async function attachLessonNotes(db, chatId, groupName, lessons) {
+  const list = Array.isArray(lessons) ? lessons : [];
+  if (!groupName || !list.length) {
+    return list;
+  }
+
+  const notes = await getLessonNotesForUserGroup(db, chatId, groupName);
+  if (!notes.length) {
+    return list;
+  }
+
+  const notesMap = new Map(
+    notes.map((note) => [`${note.weekday}:${note.lesson_number}`, note.note])
+  );
+
+  return list.map((lesson) => ({
+    ...lesson,
+    note: notesMap.get(`${lesson.weekday}:${lesson.lesson_number}`) ?? null
+  }));
 }
