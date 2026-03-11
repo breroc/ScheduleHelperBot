@@ -26,41 +26,50 @@ The project keeps the runtime simple:
 
 ## Preview
 
+### Core experience
+
+The main flow is built for fast daily use: select a group once, open today's classes in one tap, and get a clean preview for tomorrow in the evening.
+
 <table>
   <tr>
     <td align="center">
       <img src="./docs/screenshots/group-selection.png" alt="Group selection and main menu" width="260" />
       <br />
-      <strong>Group selection and main menu</strong>
+      <strong>Choose a group and start immediately</strong>
     </td>
     <td align="center">
       <img src="./docs/screenshots/today-view.png" alt="Today view" width="260" />
       <br />
-      <strong>Today view</strong>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="./docs/screenshots/inline-settings.png" alt="Inline settings" width="260" />
-      <br />
-      <strong>Inline settings</strong>
+      <strong>Check today with live lesson status</strong>
     </td>
     <td align="center">
       <img src="./docs/screenshots/evening-preview.png" alt="Evening preview" width="260" />
       <br />
-      <strong>Evening preview</strong>
+      <strong>See tomorrow before the day starts</strong>
     </td>
   </tr>
+</table>
+
+### Personal tools
+
+The bot also includes a lightweight personal layer: inline settings, pinned favorite groups, and lesson notes that appear directly inside schedule views and reminders.
+
+<table>
   <tr>
+    <td align="center">
+      <img src="./docs/screenshots/inline-settings.png" alt="Inline settings" width="260" />
+      <br />
+      <strong>Manage settings without chat clutter</strong>
+    </td>
     <td align="center">
       <img src="./docs/screenshots/today-with-note.png" alt="Today view with lesson note" width="260" />
       <br />
-      <strong>Today view with a lesson note</strong>
+      <strong>Attach personal notes to lesson slots</strong>
     </td>
     <td align="center">
       <img src="./docs/screenshots/favorites-view.png" alt="Favorites quick view" width="260" />
       <br />
-      <strong>Favorites quick view</strong>
+      <strong>Open pinned groups in one tap</strong>
     </td>
   </tr>
 </table>
