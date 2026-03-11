@@ -1,6 +1,7 @@
 import {
   getDailyCronDeliveryStats,
   getLessonNote,
+  getLessonNotesForUserGroup,
   getLessonsByGroupAndWeekday,
   getUser,
   getUsersForEvening,
@@ -223,8 +224,14 @@ export async function runEveningPreviewCron(env) {
       lessonsByGroup.set(cacheKey, lessons);
     }
 
+    const lessonsWithNotes = await attachLessonNotesForUser(
+      env.DB,
+      user.chat_id,
+      user.group_name,
+      lessons
+    );
     const text = formatEveningPreview(user.language, {
-      lessons,
+      lessons: lessonsWithNotes,
       date: tomorrow
     });
     try {
@@ -245,6 +252,27 @@ export async function runEveningPreviewCron(env) {
   console.log('evening_cron_summary', { dateKey: now.dateKey, total: results.length, sent, failed });
 
   await logCronDelivery(env.DB, now.dateKey, 'evening', sent, failed);
+}
+
+async function attachLessonNotesForUser(db, chatId, groupName, lessons) {
+  const list = Array.isArray(lessons) ? lessons : [];
+  if (!groupName || !list.length) {
+    return list;
+  }
+
+  const notes = await getLessonNotesForUserGroup(db, chatId, groupName);
+  if (!notes.length) {
+    return list;
+  }
+
+  const notesMap = new Map(
+    notes.map((note) => [`${note.weekday}:${note.lesson_number}`, note.note])
+  );
+
+  return list.map((lesson) => ({
+    ...lesson,
+    note: notesMap.get(`${lesson.weekday}:${lesson.lesson_number}`) ?? null
+  }));
 }
 
 export async function runAdminDailyReportCron(env) {

@@ -528,7 +528,7 @@ export async function getUsersForEvening(db) {
   try {
     const response = await db
       .prepare(
-        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1 AND COALESCE(is_active, 1) = 1'
+        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(is_active, 1) = 1'
       )
       .all();
     results = response.results ?? [];
@@ -536,7 +536,7 @@ export async function getUsersForEvening(db) {
     console.error('get_users_for_evening_active_filter_warning', { error: String(error) });
     const response = await db
       .prepare(
-        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL AND COALESCE(morning_enabled, 1) = 1'
+        'SELECT chat_id, group_name, language, morning_enabled, last_evening_sent FROM users WHERE group_name IS NOT NULL'
       )
       .all();
     results = response.results ?? [];
