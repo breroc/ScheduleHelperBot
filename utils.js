@@ -226,8 +226,14 @@ export function normalizeWeekdayValue(value) {
 }
 
 export function pickLanguageByTelegram(telegramLanguageCode) {
-  if (typeof telegramLanguageCode === 'string' && telegramLanguageCode.toLowerCase().startsWith('ru')) {
-    return 'ru';
+  if (typeof telegramLanguageCode === 'string') {
+    const code = telegramLanguageCode.toLowerCase();
+    if (code.startsWith('ru')) {
+      return 'ru';
+    }
+    if (code.startsWith('zh')) {
+      return 'zh';
+    }
   }
   return CONFIG.DEFAULT_LANGUAGE;
 }
@@ -239,7 +245,7 @@ export function parseReminderChoice(text) {
   if (text === '10 min') {
     return { enabled: 1, minutes: 10 };
   }
-  if (text === 'Off' || text === 'Выкл') {
+  if (text === 'Off' || text === 'Выкл' || text === '关闭') {
     return { enabled: 0, minutes: CONFIG.DEFAULT_REMINDER_MINUTES };
   }
   return null;

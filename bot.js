@@ -209,6 +209,16 @@ export async function handleUpdate(update, env) {
       await sendSettingsText(env, chatId, language, t(language, 'settings.languageUpdated', { language: 'English' }));
       return;
     }
+    case 'langZh': {
+      await setUserLanguage(env.DB, chatId, 'zh');
+      user = {
+        ...user,
+        language: 'zh'
+      };
+      language = 'zh';
+      await sendSettingsText(env, chatId, language, t(language, 'settings.languageUpdated', { language: '中文' }));
+      return;
+    }
     case 'notifChoice': {
       const choice = parseReminderChoice(text);
       if (choice) {
@@ -968,6 +978,9 @@ function detectAction(text) {
   if (text === getLocale('en').labels.english || text === getLocale('ru').labels.english) {
     return 'langEn';
   }
+  if (text === getLocale('zh').labels.chinese || text === getLocale('en').labels.chinese || text === getLocale('ru').labels.chinese) {
+    return 'langZh';
+  }
 
   if (parseReminderChoice(text)) {
     return 'notifChoice';
@@ -1288,7 +1301,7 @@ function languageKeyboard(language) {
   const menu = getLocale(language).menu;
   const labels = getLocale(language).labels;
   return {
-    keyboard: [[labels.russian, labels.english], [menu.back]],
+    keyboard: [[labels.russian, labels.english], [labels.chinese], [menu.back]],
     resize_keyboard: true
   };
 }

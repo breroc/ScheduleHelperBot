@@ -21,6 +21,7 @@ const TRANSLATIONS = {
     labels: {
       russian: 'Русский',
       english: 'English',
+      chinese: '中文',
       off: 'Off'
     },
     common: {
@@ -186,7 +187,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Help</b>',
-      body: 'This bot helps you check your class schedule, follow the next lesson, manage reminders, save favorite groups, keep lesson notes and receive morning updates.\n\nButtons:\n📅 Today - schedule for today\n📆 Tomorrow - schedule for tomorrow\n📖 Full week - full weekly schedule\n📚 Next class - current or upcoming lesson\n⭐ Favorites - quick view for favorite groups\n⚙️ Settings - language, reminders, favorites and personal options\n\nSettings buttons:\n🌐 Language - switch RU / EN\n🔔 Notifications - choose reminder time\n🔕 Mute today - pause reminders until tomorrow\n⭐ Manage favorites - pin up to 2 groups\n📝 Notes - save a note for a specific weekday and lesson\n🕗 Morning time - choose 07:00 / 07:30 / 08:00\n🧾 My settings - view current settings\n🔄 Change group - change your main group\n🌅 Daily updates - turn morning messages on or off\n\nCommands:\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n/mutetoday - mute reminders until tomorrow',
+      body: 'This bot helps you check your class schedule, follow the next lesson, manage reminders, save favorite groups, keep lesson notes and receive morning updates.\n\nButtons:\n📅 Today - schedule for today\n📆 Tomorrow - schedule for tomorrow\n📖 Full week - full weekly schedule\n📚 Next class - current or upcoming lesson\n⭐ Favorites - quick view for favorite groups\n⚙️ Settings - language, reminders, favorites and personal options\n\nSettings buttons:\n🌐 Language - switch RU / EN / 中文\n🔔 Notifications - choose reminder time\n🔕 Mute today - pause reminders until tomorrow\n⭐ Manage favorites - pin up to 2 groups\n📝 Notes - save a note for a specific weekday and lesson\n🕗 Morning time - choose 07:00 / 07:30 / 08:00\n🧾 My settings - view current settings\n🔄 Change group - change your main group\n🌅 Daily updates - turn morning messages on or off\n\nCommands:\n/start - start bot\n/help - show this help\n/today - today schedule\n/today 2-8 - quick schedule for any supported group\n/tomorrow - tomorrow schedule\n/tomorrow 2-8 - quick tomorrow schedule for any supported group\n/week - full week\n/week 2-8 - quick full week for any supported group\n/next - next or current class\n/settings - open settings\n/mysettings - show your settings\n/changegroup - choose group\n/favorites - manage favorite groups\n/morning - toggle daily updates\n/morningtime - choose morning message time\n/mutetoday - mute reminders until tomorrow',
       admin: '\n\nAdmin:\n/stats - bot stats\n/user 123456789 - user card\n/inactive - list inactive users\n/cleanupinactive - remove inactive users from database\n/morningtest - send morning message to admin\n/eveningtest - send evening preview to admin\n/broadcast text - send to all users\n/broadcastgroup 2-7 text - send to one group'
     },
     weekdays: {
@@ -225,6 +226,7 @@ const TRANSLATIONS = {
     labels: {
       russian: 'Русский',
       english: 'English',
+      chinese: '中文',
       off: 'Выкл'
     },
     common: {
@@ -390,7 +392,7 @@ const TRANSLATIONS = {
     },
     help: {
       title: '❓ <b>Помощь</b>',
-      body: 'Бот помогает быстро смотреть расписание, видеть ближайшую пару, получать напоминания, сохранять избранные группы, добавлять заметки к парам и получать утренние сообщения.\n\nКнопки:\n📅 Сегодня - расписание на сегодня\n📆 Завтра - расписание на завтра\n📖 Вся неделя - полное расписание на неделю\n📚 Следующая пара - текущая или ближайшая пара\n⭐ Избранное - быстрый просмотр закреплённых групп\n⚙️ Настройки - язык, напоминания, избранное и личные параметры\n\nКнопки в настройках:\n🌐 Язык - переключение RU / EN\n🔔 Уведомления - выбор времени напоминаний\n🔕 На сегодня - выключить напоминания до завтра\n⭐ Настроить избранное - закрепить до 2 групп\n📝 Заметки - добавить заметку к конкретной паре\n🕗 Время утра - выбрать 07:00 / 07:30 / 08:00\n🧾 Мои настройки - посмотреть текущие настройки\n🔄 Сменить группу - сменить основную группу\n🌅 Ежедневные сообщения - включить или выключить утренние сообщения\n\nКоманды:\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - настроить избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n/mutetoday - отключить напоминания до завтра',
+      body: 'Бот помогает быстро смотреть расписание, видеть ближайшую пару, получать напоминания, сохранять избранные группы, добавлять заметки к парам и получать утренние сообщения.\n\nКнопки:\n📅 Сегодня - расписание на сегодня\n📆 Завтра - расписание на завтра\n📖 Вся неделя - полное расписание на неделю\n📚 Следующая пара - текущая или ближайшая пара\n⭐ Избранное - быстрый просмотр закреплённых групп\n⚙️ Настройки - язык, напоминания, избранное и личные параметры\n\nКнопки в настройках:\n🌐 Язык - переключение RU / EN / 中文\n🔔 Уведомления - выбор времени напоминаний\n🔕 На сегодня - выключить напоминания до завтра\n⭐ Настроить избранное - закрепить до 2 групп\n📝 Заметки - добавить заметку к конкретной паре\n🕗 Время утра - выбрать 07:00 / 07:30 / 08:00\n🧾 Мои настройки - посмотреть текущие настройки\n🔄 Сменить группу - сменить основную группу\n🌅 Ежедневные сообщения - включить или выключить утренние сообщения\n\nКоманды:\n/start - запуск бота\n/help - это сообщение\n/today - расписание на сегодня\n/today 2-8 - быстро посмотреть любую доступную группу\n/tomorrow - расписание на завтра\n/tomorrow 2-8 - быстро посмотреть завтра для любой доступной группы\n/week - расписание на неделю\n/week 2-8 - быстро посмотреть неделю любой доступной группы\n/next - следующая или текущая пара\n/settings - открыть настройки\n/mysettings - показать ваши настройки\n/changegroup - выбрать группу\n/favorites - настроить избранные группы\n/morning - переключить ежедневные сообщения\n/morningtime - выбрать время утреннего сообщения\n/mutetoday - отключить напоминания до завтра',
       admin: '\n\nАдмин:\n/stats - статистика\n/user 123456789 - карточка пользователя\n/inactive - список неактивных пользователей\n/cleanupinactive - удалить неактивных из базы\n/morningtest - отправить себе утреннее сообщение\n/eveningtest - отправить себе вечерний preview\n/broadcast текст - рассылка всем\n/broadcastgroup 2-7 текст - рассылка одной группе'
     },
     weekdays: {
@@ -409,8 +411,234 @@ const TRANSLATIONS = {
   }
 };
 
+const zhOverrides = {
+  menu: {
+    today: '📅 今天',
+    tomorrow: '📆 明天',
+    fullWeek: '📖 本周',
+    nextClass: '📚 下一节课',
+    favoritesView: '⭐ 收藏分组',
+    settings: '⚙️ 设置',
+    language: '🌐 语言',
+    notifications: '🔔 提醒',
+    muteToday: '🔕 今日静音',
+    favoritesManage: '⭐ 管理收藏',
+    notes: '📝 备注',
+    morningTime: '🕗 早间时间',
+    morningToggle: '🌅 每日消息',
+    mySettings: '🧾 我的设置',
+    changeGroup: '🔄 更换分组',
+    back: '⬅️ 返回'
+  },
+  labels: {
+    russian: 'Русский',
+    english: 'English',
+    chinese: '中文',
+    off: '关闭'
+  },
+  common: {
+    accessDenied: '⛔ 无权限。',
+    privateOnly: '🔒 这个机器人只支持私聊。',
+    unknownCommand: '未识别该指令。请使用下面的菜单。',
+    chooseGroup: '👥 请选择你的分组：\n\n点击下方按钮。如果没有你的分组，请联系 @thcalmdx。',
+    pickLanguage: '请选择语言：',
+    pickNotifications: '请选择提醒设置：',
+    pickFavorites: '最多选择 2 个收藏分组：',
+    pickFavoriteView: '请选择要查看的收藏分组：',
+    pickMorningTime: '请选择早间消息时间：',
+    invalidGroup: '❌ 未知分组。可用分组：{groups}',
+    todayUsage: '用法：<code>/today 2-8</code>',
+    tomorrowUsage: '用法：<code>/tomorrow 2-8</code>',
+    weekUsage: '用法：<code>/week 2-8</code>',
+    favoritesUsage: '用法：<code>/favorites 2-7 2-8</code>',
+    mainMenu: '✅ 主菜单'
+  },
+  start: {
+    newUser: '👋 <b>欢迎使用 Schedule Helper Bot！</b>\n\n我可以帮你查看课表、接收提醒和早间消息。',
+    knownUser: '👋 <b>欢迎回来！</b>\n\n打开菜单即可查看课表。'
+  },
+  groups: {
+    saved: '✅ 已保存分组：<b>{group}</b>',
+    changed: '✅ 分组已更改为 <b>{group}</b>'
+  },
+  schedule: {
+    todayTitle: '📅 <b>今天</b>',
+    tomorrowTitle: '📆 <b>明天</b>',
+    todayDateLine: '📆 今天，{date}',
+    tomorrowDateLine: '📆 明天，{date}',
+    weekTitle: '📖 <b>本周课表</b>',
+    noLessonsToday: '🎉 今天没有课。',
+    noLessonsTomorrow: '🎉 明天没有课。',
+    noLessonsWeek: '🎉 本周没有课。',
+    noLessonsDay: '无课程',
+    noGroup: '👥 请先选择你的分组。',
+    statusStartsIn: '🟢 {time} 后开始',
+    statusEndsIn: '🟠 {time} 后结束',
+    statusFinished: '⚪ 已结束',
+    nextClassTitle: '📚 <b>下一节课</b>',
+    currentClassTitle: '📚 <b>当前课程</b>',
+    noMoreToday: '✅ 今天没有更多课程了。',
+    quickGroupHeader: '👥 快速查看分组：<b>{group}</b>'
+  },
+  settings: {
+    title: '⚙️ <b>设置</b>',
+    languageUpdated: '🌐 语言已更新：<b>{language}</b>',
+    notificationsUpdated: '🔔 提醒已更新：<b>{value}</b>',
+    muteTodayUpdated: '🔕 课前提醒已关闭到明天。',
+    muteTodayAlready: '🔕 今天的课前提醒已经关闭。',
+    morningUpdated: '🌅 每日消息：<b>{value}</b>',
+    mySettingsTitle: '🧾 <b>我的设置</b>',
+    group: '👥 分组',
+    favorites: '⭐ 收藏分组',
+    language: '🌐 语言',
+    notifications: '🔔 提醒',
+    reminder: '⏰ 提前提醒',
+    reminderMute: '🔕 提醒静音',
+    morningTime: '🕗 早间时间',
+    morning: '🌅 每日消息',
+    enabled: '开启',
+    disabled: '关闭',
+    notSelected: '未选择',
+    noFavorites: '未选择',
+    noFavoritesView: '⭐ 还没有收藏分组。请先在设置中添加。',
+    favoritesUpdated: '⭐ 收藏分组已更新：<b>{value}</b>',
+    favoritesLimit: '⚠️ 最多只能固定 2 个分组。',
+    morningTimeUpdated: '🕗 早间时间已更新：<b>{value}</b>',
+    mutedToday: '今天',
+    notMuted: '否'
+  },
+  notes: {
+    menuTitle: '📝 <b>课程备注</b>\n\n当前分组：<b>{group}</b>',
+    listTitle: '📝 <b>{group} 的已保存备注</b>',
+    add: '➕ 添加备注',
+    view: '🗂 我的备注',
+    delete: '🗑 删除备注',
+    chooseDayAdd: '请选择要添加备注的星期：',
+    chooseDayDelete: '请选择要删除备注的星期：',
+    chooseLessonAdd: '请选择 <b>{day}</b> 的课程：',
+    chooseLessonDelete: '请选择 <b>{day}</b> 有备注的课程：',
+    sendText: '请发送 <b>{day}</b> 这节课的备注内容：\n\n<b>{lesson}</b>',
+    saved: '✅ 备注已保存。',
+    saveFailed: '⚠️ 暂时无法保存备注。',
+    deleted: '🗑 备注已删除。',
+    none: '还没有备注。',
+    noLessonsForDay: '这一天没有课程。',
+    noLessonsForDeleteDay: '这一天没有课程。',
+    noNotesForDay: '这一天没有已保存备注。',
+    empty: '请发送非空备注内容。',
+    tooLong: '备注太长。最多 200 个字符。',
+    flowReset: '⚠️ 备注流程已重置，请重新开始。'
+  },
+  weather: {
+    title: '杭州天气：',
+    unavailable: '天气暂时不可用。',
+    adviceUmbrella: '☔ 建议带伞',
+    adviceHot: '🥤 天气较热，记得带水',
+    adviceCold: '🧥 天气较冷，注意保暖',
+    adviceGood: '✨ 祝你今天顺利',
+    clear: '晴',
+    mainlyClear: '大致晴朗',
+    partlyCloudy: '局部多云',
+    cloudy: '多云',
+    fog: '雾',
+    drizzle: '毛毛雨',
+    rain: '雨',
+    showers: '阵雨',
+    snow: '雪',
+    thunder: '雷暴',
+    unknown: '未知天气'
+  },
+  morning: {
+    title: '🌤 <b>早上好！</b>',
+    nearestClassIn: '⏰ 距离最近一节课还有：<b>{time}</b>',
+    summary: '📚 今天共 <b>{count}</b> 节课',
+    todayLessons: '📅 <b>今天：</b>',
+    noLessons: '🎉 今天没有课。'
+  },
+  reminders: {
+    title: '⏰ <b>上课提醒</b>',
+    startsIn: '<b>{time}</b> 后开始'
+  },
+  admin: {
+    broadcastUsage: '用法：/broadcast 你的文本',
+    broadcastGroupUsage: '用法：/broadcastgroup 2-7 你的文本',
+    broadcastDone: '📣 群发完成\n\n✅ 成功：<b>{sent}</b>\n❌ 失败：<b>{failed}</b>',
+    broadcastGroupDone: '📣 分组群发完成\n\n👥 分组：<b>{group}</b>\n✅ 成功：<b>{sent}</b>\n❌ 失败：<b>{failed}</b>',
+    statsTitle: '📊 <b>机器人统计</b>',
+    totalUsers: '👥 总用户数：<b>{count}</b>',
+    inactiveUsers: '🚫 非活跃用户：<b>{count}</b>',
+    notificationsOn: '🔔 已开启提醒：<b>{count}</b>',
+    byGroupTitle: '分组：',
+    usersByGroupTitle: '👤 各分组用户：',
+    inactiveTitle: '🚫 <b>非活跃用户</b>',
+    inactiveNone: '没有非活跃用户',
+    userUsage: '用法：/user 123456789',
+    userNotFound: '未找到该用户',
+    userCardTitle: '👤 <b>用户卡片</b>',
+    status: '状态',
+    active: '活跃',
+    inactive: '不活跃',
+    cleanupInactiveDone: '🧹 已删除非活跃用户：<b>{count}</b>',
+    lastSeen: '最后活跃',
+    deactivatedAt: '停用时间',
+    noUsers: '没有用户',
+    noUsername: '没有 username',
+    dailyTitle: '📈 <b>每日投递统计（{date}）</b>',
+    morningLine: '🌅 早间消息：成功 <b>{sent}</b>，失败 <b>{failed}</b>',
+    reminderLine: '🔔 课前提醒：成功 <b>{sent}</b>，失败 <b>{failed}</b>',
+    eveningLine: '🌙 晚间预览：成功 <b>{sent}</b>，失败 <b>{failed}</b>'
+  },
+  evening: {
+    title: '🌙 <b>明日预览</b>',
+    dateLine: '📆 明天，{date}',
+    noLessons: '🎉 明天没有课。',
+    noLessonsHint: '今晚可以轻松一点。',
+    summary: '📚 明天共 <b>{count}</b> 节课',
+    firstLesson: '⏰ 第一节课：<b>{time}</b>',
+    lessonsTitle: '📆 <b>明天：</b>'
+  },
+  help: {
+    title: '❓ <b>帮助</b>',
+    body: '这个机器人可以帮助你快速查看课表、查看下一节课、接收提醒、保存收藏分组、给课程添加备注，并接收早间消息。\n\n按钮：\n📅 今天 - 查看今天的课表\n📆 明天 - 查看明天的课表\n📖 本周 - 查看整周课表\n📚 下一节课 - 当前或下一节课\n⭐ 收藏分组 - 快速查看收藏分组\n⚙️ 设置 - 语言、提醒、收藏和个人设置\n\n设置中的按钮：\n🌐 语言 - 切换 RU / EN / 中文\n🔔 提醒 - 选择提醒时间\n🔕 今日静音 - 关闭今天的提醒\n⭐ 管理收藏 - 固定最多 2 个分组\n📝 备注 - 给某一天某一节课添加备注\n🕗 早间时间 - 选择 07:00 / 07:30 / 08:00\n🧾 我的设置 - 查看当前设置\n🔄 更换分组 - 更换主分组\n🌅 每日消息 - 开启或关闭早间消息\n\n命令：\n/start - 启动机器人\n/help - 查看帮助\n/today - 今天课表\n/today 2-8 - 快速查看任意支持分组\n/tomorrow - 明天课表\n/tomorrow 2-8 - 快速查看任意支持分组的明天课表\n/week - 本周课表\n/week 2-8 - 快速查看任意支持分组的周课表\n/next - 当前或下一节课\n/settings - 打开设置\n/mysettings - 查看你的设置\n/changegroup - 选择分组\n/favorites - 管理收藏分组\n/morning - 切换每日消息\n/morningtime - 选择早间消息时间\n/mutetoday - 关闭提醒到明天',
+    admin: '\n\n管理员：\n/stats - 查看统计\n/user 123456789 - 查看用户卡片\n/inactive - 查看非活跃用户\n/cleanupinactive - 从数据库中删除非活跃用户\n/morningtest - 给管理员发送测试早间消息\n/eveningtest - 给管理员发送测试晚间预览\n/broadcast 文本 - 群发给所有用户\n/broadcastgroup 2-7 文本 - 群发给单个分组'
+  },
+  weekdays: {
+    1: '星期一',
+    2: '星期二',
+    3: '星期三',
+    4: '星期四',
+    5: '星期五',
+    6: '星期六',
+    7: '星期日'
+  },
+  time: {
+    min: '分钟',
+    hour: '小时'
+  }
+};
+
+TRANSLATIONS.zh = mergeLocale(TRANSLATIONS.en, zhOverrides);
+
+function mergeLocale(base, overrides) {
+  const result = Array.isArray(base) ? [...base] : { ...base };
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = mergeLocale(base?.[key] ?? {}, value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 export function resolveLanguage(language) {
-  return language === 'ru' ? 'ru' : 'en';
+  if (language === 'ru') {
+    return 'ru';
+  }
+  if (language === 'zh') {
+    return 'zh';
+  }
+  return 'en';
 }
 
 export function t(language, key, params = {}) {
@@ -435,4 +663,4 @@ export function getLocale(language) {
   return TRANSLATIONS[resolveLanguage(language)];
 }
 
-export const SUPPORTED_LANGUAGES = ['en', 'ru'];
+export const SUPPORTED_LANGUAGES = ['en', 'ru', 'zh'];

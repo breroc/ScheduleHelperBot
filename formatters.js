@@ -142,7 +142,7 @@ export function formatAdminUserCard(language, user) {
   const favorites = Array.isArray(user.favorite_groups) && user.favorite_groups.length
     ? user.favorite_groups.join(', ')
     : t(language, 'settings.noFavorites');
-  const languageLabel = user.language === 'ru' ? 'Русский' : 'English';
+  const languageLabel = getLanguageLabel(user.language);
   const notificationsState = Number(user.notifications_enabled) === 1
     ? t(language, 'settings.enabled')
     : t(language, 'settings.disabled');
@@ -476,20 +476,41 @@ function normalizeDateTime(value, language) {
   const timeText = `${String(target.hour).padStart(2, '0')}:${String(target.minute).padStart(2, '0')}`;
 
   if (dayDiff === 0) {
-    return language === 'ru' ? `сегодня ${timeText}` : `today ${timeText}`;
+    if (language === 'ru') {
+      return `сегодня ${timeText}`;
+    }
+    if (language === 'zh') {
+      return `今天 ${timeText}`;
+    }
+    return `today ${timeText}`;
   }
 
   if (dayDiff === 1) {
-    return language === 'ru' ? 'вчера' : 'yesterday';
+    if (language === 'ru') {
+      return 'вчера';
+    }
+    if (language === 'zh') {
+      return '昨天';
+    }
+    return 'yesterday';
   }
 
   if (dayDiff === 2) {
-    return language === 'ru' ? 'позавчера' : 'day before yesterday';
+    if (language === 'ru') {
+      return 'позавчера';
+    }
+    if (language === 'zh') {
+      return '前天';
+    }
+    return 'day before yesterday';
   }
 
   if (dayDiff > 2) {
     if (language === 'ru') {
       return `${dayDiff} ${formatRussianDays(dayDiff)} назад`;
+    }
+    if (language === 'zh') {
+      return `${dayDiff} 天前`;
     }
     return `${dayDiff} days ago`;
   }
@@ -667,7 +688,7 @@ function formatSettingsText(language, user, titleKey) {
   const favorites = Array.isArray(user.favorite_groups) && user.favorite_groups.length
     ? user.favorite_groups.join(', ')
     : t(language, 'settings.noFavorites');
-  const languageLabel = user.language === 'ru' ? 'Русский' : 'English';
+  const languageLabel = getLanguageLabel(user.language);
   const morningTime = user.morning_time || '07:00';
   const reminderMute = getReminderMuteState(language, user);
 
@@ -709,8 +730,22 @@ function getReminderMuteState(language, user) {
     : t(language, 'settings.notMuted');
 }
 
+function getLanguageLabel(language) {
+  if (language === 'ru') {
+    return 'Русский';
+  }
+  if (language === 'zh') {
+    return '中文';
+  }
+  return 'English';
+}
+
 function formatLocalizedPreviewDate(language, date) {
-  const locale = language === 'ru' ? 'ru-RU' : 'en-US';
+  const locale = language === 'ru'
+    ? 'ru-RU'
+    : language === 'zh'
+      ? 'zh-CN'
+      : 'en-US';
   return new Intl.DateTimeFormat(locale, {
     timeZone: CONFIG.TIMEZONE,
     weekday: 'long',

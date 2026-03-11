@@ -4,7 +4,7 @@ Production-like Telegram schedule bot on **Cloudflare Workers** with these featu
 - group selection (`1-7`, `2-1`, `2-2`, `2-4`, `2-6`, `2-7`, `2-8`, `3-4`, `3-6`, `4-3`, `4-4`, `4-6`, `4-7`, `5-2`, `6-2`)
 - today / tomorrow / full week / next class
 - quick group commands `/today 2-8`, `/tomorrow 2-8`, `/week 2-8`
-- RU/EN language
+- RU/EN/ZH language
 - reminder settings (5 min / 10 min / off)
 - pinned favorite groups
 - personal lesson notes via settings buttons
@@ -28,7 +28,7 @@ No npm libraries are used.
 - `db.js` - D1 data access + schema checks/migrations
 - `schedule-data.js` - primary static timetable source used by bot commands and cron
 - `formatters.js` - UI formatting for readable bot messages
-- `translations.js` - RU/EN strings and labels
+- `translations.js` - RU/EN/ZH strings and labels
 - `utils.js` - timezone/date/status/weather helpers
 - `cron.js` - morning cron + reminders cron
 - `telegram.js` - Telegram Bot API transport
