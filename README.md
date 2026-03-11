@@ -24,6 +24,47 @@ The project keeps the runtime simple:
 - user state lives in Cloudflare D1
 - no external npm libraries are used
 
+## Preview
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/group-selection.png" alt="Group selection and main menu" width="260" />
+      <br />
+      <strong>Group selection and main menu</strong>
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/today-view.png" alt="Today view" width="260" />
+      <br />
+      <strong>Today view</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/inline-settings.png" alt="Inline settings" width="260" />
+      <br />
+      <strong>Inline settings</strong>
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/evening-preview.png" alt="Evening preview" width="260" />
+      <br />
+      <strong>Evening preview</strong>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/today-with-note.png" alt="Today view with lesson note" width="260" />
+      <br />
+      <strong>Today view with a lesson note</strong>
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/favorites-view.png" alt="Favorites quick view" width="260" />
+      <br />
+      <strong>Favorites quick view</strong>
+    </td>
+  </tr>
+</table>
+
 ## Highlights
 
 - built on **Cloudflare Workers**
