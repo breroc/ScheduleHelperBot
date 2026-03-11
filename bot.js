@@ -113,17 +113,18 @@ export async function handleUpdate(update, env) {
     return;
   }
 
-  if (CONFIG.GROUPS.includes(text)) {
+  const selectedGroup = parseGroupChoice(text);
+  if (selectedGroup) {
     const wasSelected = Boolean(user.group_name);
-    await setUserGroup(env.DB, chatId, text);
+    await setUserGroup(env.DB, chatId, selectedGroup);
     user = {
       ...user,
-      group_name: text
+      group_name: selectedGroup
     };
     language = resolveLanguage(user.language);
 
     const key = wasSelected ? 'groups.changed' : 'groups.saved';
-    await sendMainMenu(env, chatId, language, t(language, key, { group: text }));
+    await sendMainMenu(env, chatId, language, t(language, key, { group: selectedGroup }));
     return;
   }
 
@@ -1399,7 +1400,7 @@ function groupKeyboard(language) {
   const menu = getLocale(language).menu;
   const rows = [];
   for (let index = 0; index < CONFIG.GROUPS.length; index += 2) {
-    rows.push(CONFIG.GROUPS.slice(index, index + 2));
+    rows.push(CONFIG.GROUPS.slice(index, index + 2).map((groupName) => buildGroupChoiceLabel(groupName)));
   }
 
   return {
@@ -1502,6 +1503,41 @@ function parseWeekdayChoice(text) {
     }
   }
   return null;
+}
+
+function parseGroupChoice(text) {
+  const value = String(text ?? '').trim();
+  if (CONFIG.GROUPS.includes(value)) {
+    return value;
+  }
+
+  const matched = value.match(/^(?:🟢|🔵|🟠|🔴|🟣|⚫)\s+(.+)$/);
+  const candidate = matched?.[1]?.trim() ?? '';
+  return CONFIG.GROUPS.includes(candidate) ? candidate : null;
+}
+
+function buildGroupChoiceLabel(groupName) {
+  return `${getGroupBadge(groupName)} ${groupName}`;
+}
+
+function getGroupBadge(groupName) {
+  const level = Number(String(groupName ?? '').split('-')[0]);
+  switch (level) {
+    case 1:
+      return '🟢';
+    case 2:
+      return '🔵';
+    case 3:
+      return '🟠';
+    case 4:
+      return '🔴';
+    case 5:
+      return '🟣';
+    case 6:
+      return '⚫';
+    default:
+      return '🎓';
+  }
 }
 
 function buildWeekdayChoiceLabel(language, weekday) {
