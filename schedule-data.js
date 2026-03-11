@@ -828,6 +828,96 @@ export const STATIC_SCHEDULE = [
     end_time: '11:30'
   },
   {
+    group_name: '4-3',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Speaking I',
+    teacher: 'Wu Dongmei',
+    classroom: '31-112',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Song Ling',
+    classroom: '31-112',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading I',
+    teacher: 'Cheng Suwan',
+    classroom: '31-112',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'tuesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Song Ling',
+    classroom: '31-112',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Speaking I',
+    teacher: 'Wu Dongmei',
+    classroom: '31-112',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Song Ling',
+    classroom: '31-112',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Intensive Reading I',
+    teacher: 'Song Ling',
+    classroom: '31-113',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Intermediate Chinese Writing I',
+    teacher: 'Guo Wenying',
+    classroom: '31-113',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '4-3',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Intermediate Chinese Reading I',
+    teacher: 'Cheng Suwan',
+    classroom: '31-117',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
     group_name: '4-4',
     day_of_week: 'monday',
     lesson_number: 1,
