@@ -1,80 +1,117 @@
-# ScheduleHelperBot
+# ZJU Schedule Bot
 
-Telegram schedule bot for ZJU language-course groups, built on Cloudflare Workers with pure JavaScript.
+A fast, production-style Telegram bot for ZJU language-program schedules.
 
-It gives users a clean daily schedule flow, reminders before classes, morning and evening digests, favorite groups, personal lesson notes, and admin tools for broadcasts and stats.
+It is built on Cloudflare Workers with pure JavaScript and is designed for one job: make daily schedule checks, reminders, and group switching simple inside Telegram.
+
+## Overview
+
+ZJU Schedule Bot gives students a cleaner alternative to checking screenshots or timetable files manually.
+
+With the bot, users can:
+
+- check `Today`, `Tomorrow`, `Full week`, and `Next class`
+- receive reminder notifications before lessons
+- get a morning digest with weather and schedule summary
+- receive an evening preview for the next day
+- save up to 2 favorite groups
+- add personal notes to lesson slots
+- manage settings through inline menus
+
+The project keeps the runtime simple:
+
+- timetable data is bundled in [`schedule-data.js`](./schedule-data.js)
+- user state lives in Cloudflare D1
+- no external npm libraries are used
 
 ## Highlights
 
-- Cloudflare Workers runtime
-- Telegram webhook mode
-- D1 for users, settings, notes, and delivery stats
-- Static timetable source in `schedule-data.js`
-- Pure JavaScript, no npm libraries
-- RU / EN / ZH interface
-- Main menu with reply keyboard
-- Settings flow migrated to inline callbacks where it is safe
+- built on **Cloudflare Workers**
+- **Telegram webhook** mode only
+- **D1** for users, settings, notes, and delivery stats
+- static timetable source for fast schedule responses
+- **RU / EN / ZH** interface
+- reply-keyboard main menu
+- inline settings flow where it is already stable
+- personal lesson notes integrated into schedule and reminder flows
 
-## Supported groups
+## Supported Groups
 
 `1-7`, `2-1`, `2-2`, `2-4`, `2-6`, `2-7`, `2-8`, `3-4`, `3-6`, `4-3`, `4-4`, `4-6`, `4-7`, `5-2`, `6-2`
 
-## What users can do
+If your group is not available yet, contact `@thcalmdx`.
 
-### Main schedule actions
+## User Features
 
-- `Today` - schedule for today with live lesson status
-- `Tomorrow` - schedule for tomorrow
-- `Full week` - full weekly timetable
-- `Next class` - current or upcoming lesson
-- quick one-off checks for another group:
+### Schedule
+
+- `📅 Today` - today's schedule with live lesson status
+- `📆 Tomorrow` - tomorrow's schedule
+- `📖 Full week` - full weekly timetable
+- `📚 Next class` - current or upcoming lesson
+- quick one-off lookup for another group:
   - `/today 2-8`
   - `/tomorrow 2-8`
   - `/week 2-8`
 
+### Notifications
+
+- reminders before lessons
+- reminder lead time: `5 min`, `10 min`, or `Off`
+- temporary reminder mute for the current day
+- morning digest with:
+  - weather in Hangzhou
+  - max temperature for today
+  - weather advice
+  - time until nearest class
+  - today's lessons
+- evening preview with:
+  - tomorrow's weekday and date
+  - number of lessons
+  - first lesson time
+  - tomorrow's schedule
+  - personal notes for tomorrow's lessons
+
 ### Personalization
 
 - choose main group
-- switch language: RU / EN / ZH
-- set reminders: `5 min`, `10 min`, or `Off`
-- choose morning digest time: `07:00`, `07:30`, `08:00`
-- enable or disable morning digests
-- mute reminders until tomorrow with `/mutetoday`
+- change interface language: `RU / EN / ZH`
+- choose morning digest time:
+  - `07:00`
+  - `07:30`
+  - `08:00`
+- enable or disable daily morning digests
 - save up to 2 favorite groups
-- add personal notes to a weekday + lesson slot
+- add personal notes to a lesson slot
 
 ### Notes
 
-Lesson notes are personal and attached to:
+Notes are personal and attached to:
 
-- user
-- group
-- weekday
-- lesson number
+- `chat_id`
+- `group_name`
+- `weekday`
+- `lesson_number`
 
-Notes appear in:
+They are shown in:
 
 - `Today`
 - `Tomorrow`
 - `Full week`
 - `Next class`
 - reminder messages
-- evening preview for tomorrow
-
-### Favorites
-
-Users can pin up to 2 groups and then quickly open them from `⭐ Favorites` in the main menu.
+- evening preview
 
 ## Settings UX
 
-The bot currently uses a hybrid interface on purpose:
+The UI is intentionally hybrid.
 
-- main navigation stays on a reply keyboard
-- `Settings` opens as an inline message with callback buttons
-- nested settings screens use message editing where it is already stable
-- note text input stays as a regular text message, because the user still needs to type content manually
+- the main bot navigation stays on a reply keyboard
+- `Settings` opens as an inline menu
+- nested settings screens use callbacks and message editing
+- note text input still uses a normal message, because the user must type content manually
 
-### Inline settings currently supported
+### Inline Settings Currently Supported
 
 - `Language`
 - `Notifications`
@@ -85,101 +122,101 @@ The bot currently uses a hybrid interface on purpose:
 - `My settings`
 - `Change group`
 
-## Admin tools
+## Admin Features
 
 Admin access is controlled by `ADMIN_ID`.
 
 Available admin commands:
 
-- `/broadcast <text>` - send to all active users
-- `/broadcastgroup <group> <text>` - send to one group
-- `/stats` - totals, delivery stats, grouped user list
+- `/broadcast <text>` - send a message to all active users
+- `/broadcastgroup <group> <text>` - send a message to one group
+- `/stats` - delivery stats and grouped user overview
 - `/user <chat_id>` - detailed user card
 - `/inactive` - list inactive users
 - `/cleanupinactive` - remove inactive users from the database
-- `/morningtest` - send morning digest to admin only
-- `/eveningtest` - send evening preview to admin only
+- `/morningtest` - send the morning digest to the admin only
+- `/eveningtest` - send the evening preview to the admin only
 
-## Runtime model
+## Runtime Model
 
-### Source of truth for timetable
+### Timetable Source
 
-The bot does **not** read schedule data from D1 at runtime anymore.
+The bot does **not** read timetable data from D1 at runtime.
 
-Timetable data is loaded from:
+Schedule data is loaded from:
 
 - [`schedule-data.js`](./schedule-data.js)
 
-That file is the primary source for:
+This file is the source of truth for:
 
 - `Today`
 - `Tomorrow`
 - `Full week`
 - `Next class`
+- reminder logic
 - morning digests
 - evening previews
-- reminder logic
 
-### What D1 is still used for
+### What D1 Stores
 
-D1 stores runtime state only:
+D1 is still used for runtime state:
 
 - users
 - selected group
 - language
-- notification settings
+- reminder settings
 - morning settings
 - favorites
-- temporary mute state
+- temporary reminder mute
 - note-flow state
 - lesson notes
-- inactive user tracking
+- inactive user state
 - delivery statistics
 - admin report markers
 
-## Project structure
+## Project Structure
 
 | File | Responsibility |
 | --- | --- |
-| [`worker.js`](./worker.js) | Worker entrypoint, webhook auth, fetch + scheduled handlers |
-| [`bot.js`](./bot.js) | Telegram update router, commands, text handlers, inline callbacks |
-| [`db.js`](./db.js) | D1 access layer, schema helper, user/settings/note/stat queries |
+| [`worker.js`](./worker.js) | Worker entrypoint, webhook auth, fetch and scheduled handlers |
+| [`bot.js`](./bot.js) | Telegram routing, commands, text handlers, inline callbacks |
+| [`db.js`](./db.js) | D1 access layer, settings, notes, stats, schema helpers |
 | [`schedule-data.js`](./schedule-data.js) | Static timetable source |
 | [`formatters.js`](./formatters.js) | User-facing message formatting |
 | [`translations.js`](./translations.js) | RU / EN / ZH strings |
-| [`utils.js`](./utils.js) | Timezone, status, weather, helper utilities |
+| [`utils.js`](./utils.js) | Timezone, weather, lesson status, helper utilities |
 | [`cron.js`](./cron.js) | Morning digest, evening preview, reminder cron logic |
-| [`telegram.js`](./telegram.js) | Telegram Bot API transport helpers |
-| [`migrations/001_users_add_bot_fields.sql`](./migrations/001_users_add_bot_fields.sql) | Historical migration reference |
+| [`telegram.js`](./telegram.js) | Telegram Bot API helpers |
+| [`wrangler.jsonc`](./wrangler.jsonc) | Cloudflare Worker config |
 
-## Cloudflare bindings and secrets
+## Cloudflare Setup
 
-### Required runtime secrets
+### Required Runtime Secrets
 
 - `BOT_TOKEN`
 - `WEBHOOK_SECRET` (recommended)
 
-### Required vars / bindings
+### Required Vars / Bindings
 
 - `ADMIN_ID`
 - `WEBHOOK_PATH`
 - `DB`
 
-Current `wrangler.jsonc` uses:
+Current project defaults:
 
 - Worker name: `schedulehelperbot`
-- entry: `worker.js`
-- D1 binding name: `DB`
+- entry file: `worker.js`
+- D1 binding: `DB`
 - default webhook path: `telegram`
 
 Important:
 
-- `BOT_TOKEN` and `WEBHOOK_SECRET` should be stored as **runtime secrets**, not plain vars
-- if these are missing in production, the bot will deploy but not behave correctly
+- `BOT_TOKEN` and `WEBHOOK_SECRET` must be stored as **runtime secrets**
+- do not put Telegram secrets into `wrangler.jsonc`
 
-## Webhook behavior
+## Webhook Behavior
 
-The worker accepts:
+Accepted routes:
 
 - `GET /` -> `Schedule Helper Bot is running`
 - `GET /health` -> `ok`
@@ -187,16 +224,16 @@ The worker accepts:
 
 Webhook protection:
 
-- path must match `WEBHOOK_PATH`
+- the path must match `WEBHOOK_PATH`
 - if `WEBHOOK_SECRET` is set, header `X-Telegram-Bot-Api-Secret-Token` must match
 
 There is no polling mode in this project.
 
-## Cron schedule
+## Cron Schedule
 
-All business logic runs in `Asia/Shanghai`.
+All bot logic works in `Asia/Shanghai`.
 
-Current cron setup in `wrangler.jsonc`:
+Current `wrangler.jsonc` cron setup:
 
 | UTC cron | Shanghai time | Purpose |
 | --- | --- | --- |
@@ -206,39 +243,22 @@ Current cron setup in `wrangler.jsonc`:
 | `5 12 * * *` | `20:05` | admin daily report |
 | `*/2 * * * *` | every 2 minutes | lesson reminders |
 
-### Morning digest
+### Morning Digest Rules
 
-Sent only to users who:
+Morning digests are sent only to users who:
 
 - have a selected group
 - have `morning_enabled = 1`
-- matched their selected `morning_time`
+- match their selected `morning_time`
 - were not already sent today
 
-Morning digest contains:
+### Evening Preview Rules
 
-- greeting
-- Hangzhou weather
-- max temperature for today
-- weather advice
-- time until nearest class
-- today schedule
+Evening previews are sent to active users with a selected group.
 
-### Evening preview
+They are independent from `morning_enabled`.
 
-Sent to active users with a selected group.
-
-Evening preview contains:
-
-- tomorrow weekday and date
-- number of classes tomorrow
-- first class time
-- tomorrow lessons
-- personal notes for tomorrow's lessons, if present
-
-Evening preview is independent from `morning_enabled`.
-
-### Reminders
+### Reminder Rules
 
 Reminder cron:
 
@@ -246,23 +266,21 @@ Reminder cron:
 - respects `notifications_enabled`
 - respects `reminder_minutes`
 - respects `reminder_mute_until_date`
-- prevents duplicates via `last_reminder_key`
-- includes personal lesson note if one exists for that slot
+- prevents duplicates through `last_reminder_key`
+- includes a personal lesson note if one exists for that lesson slot
 
-## Manual D1 preparation
+## Manual D1 Preparation
 
 This project no longer relies on hot-path schema initialization.
 
 Prepare the database manually before production deploy.
 
-### Existing tables expected
-
-The code expects these base tables to exist:
+### Existing Base Tables Expected
 
 - `users`
 - `announcements`
 
-### `users` columns used by the bot
+### `users` Columns Used by the Bot
 
 If your `users` table is older, add only the missing columns.
 
@@ -290,7 +308,7 @@ ALTER TABLE users ADD COLUMN last_seen_at TEXT;
 ALTER TABLE users ADD COLUMN deactivated_at TEXT;
 ```
 
-### `announcements` compatibility
+### `announcements` Compatibility
 
 If your `announcements` table is older, make sure these columns exist:
 
@@ -299,7 +317,7 @@ ALTER TABLE announcements ADD COLUMN kind TEXT;
 ALTER TABLE announcements ADD COLUMN text TEXT;
 ```
 
-### Required service tables
+### Required Service Tables
 
 ```sql
 CREATE TABLE IF NOT EXISTS delivery_stats (
@@ -330,13 +348,13 @@ CREATE INDEX IF NOT EXISTS idx_lesson_notes_lookup ON lesson_notes(chat_id, grou
 Notes:
 
 - run `ALTER TABLE ... ADD COLUMN` statements one by one if you are not sure which columns already exist
-- SQLite/D1 will fail on duplicate columns, which is expected
+- SQLite / D1 will fail on duplicate columns, which is expected
 
-## Updating schedule data
+## Updating Schedule Data
 
-All timetable maintenance should now happen in [`schedule-data.js`](./schedule-data.js).
+All timetable maintenance now happens in [`schedule-data.js`](./schedule-data.js).
 
-### Expected lesson shape
+### Expected Lesson Shape
 
 ```js
 {
@@ -351,18 +369,18 @@ All timetable maintenance should now happen in [`schedule-data.js`](./schedule-d
 }
 ```
 
-### Update workflow
+### Update Workflow
 
 1. collect timetable rows for a group
 2. update that group in `schedule-data.js`
 3. commit and deploy
-4. verify the group through:
+4. verify through:
    - `Today`
    - `Tomorrow`
    - `Full week`
    - `Next class`
 
-### Built-in validation
+### Built-in Validation
 
 `db.js` validates static schedule data on load and logs warnings for:
 
@@ -392,9 +410,9 @@ npx wrangler deploy --config wrangler.jsonc
    - var `ADMIN_ID`
    - var `WEBHOOK_PATH`
    - D1 binding `DB`
-5. deploy latest version
+5. deploy the latest version
 
-### Set webhook
+### Set Webhook
 
 ```bash
 curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
@@ -402,27 +420,27 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
   -d "secret_token=<YOUR_WEBHOOK_SECRET>"
 ```
 
-### Check webhook
+### Check Webhook
 
 ```bash
 curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ```
 
-You want to see:
+Expected result:
 
 - correct Worker URL
 - no `last_error_message`
 
-## Health and troubleshooting
+## Health and Troubleshooting
 
-### Quick checks
+### Quick Checks
 
 - `GET /` -> worker is alive
 - `GET /health` -> health probe
 - `/start` -> group selection or main menu
-- `/help` -> user-facing capability overview
+- `/help` -> current user-facing capability overview
 
-### Common failure points
+### Common Failure Points
 
 - bot does not answer:
   - check that `BOT_TOKEN` exists as a runtime secret
@@ -431,12 +449,12 @@ You want to see:
   - check `WEBHOOK_SECRET`
   - check `WEBHOOK_PATH`
 - schedule is empty for a group:
-  - confirm that group exists in `CONFIG.GROUPS`
-  - confirm that group has rows in `schedule-data.js`
+  - confirm the group exists in `CONFIG.GROUPS`
+  - confirm the group has rows in `schedule-data.js`
 - reminders or stats look wrong:
   - verify missing D1 columns were added manually
 
-### Useful logs
+### Useful Logs
 
 The worker logs compact events such as:
 
@@ -446,8 +464,8 @@ The worker logs compact events such as:
 - `reminder_cron_summary`
 - `evening_cron_summary`
 - `callback_query_error`
-- D1 warning/error logs for migrations and note storage
+- D1 warning or error logs for migrations and note storage
 
-## License / notes
+## Notes
 
-This repository is structured as a production-style bot, but kept intentionally readable for maintenance and manual schedule updates.
+This repository is intentionally structured like a production bot, but kept readable enough for manual schedule maintenance and incremental feature work.
