@@ -281,7 +281,7 @@ export async function fetchHangzhouWeather() {
   const headers = { 'Accept': 'application/json' };
 
   try {
-    const primaryUrl = 'https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&timezone=Asia%2FShanghai&current=temperature_2m,weather_code';
+    const primaryUrl = 'https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&timezone=Asia%2FShanghai&current=weather_code&daily=temperature_2m_max&forecast_days=1';
     const primaryResponse = await fetch(primaryUrl, { headers });
     if (!primaryResponse.ok) {
       throw new Error(`weather_primary_status_${primaryResponse.status}`);
@@ -289,9 +289,10 @@ export async function fetchHangzhouWeather() {
 
     const primaryPayload = await primaryResponse.json();
     const current = primaryPayload?.current;
-    if (current && typeof current.temperature_2m === 'number' && typeof current.weather_code === 'number') {
+    const dailyMax = primaryPayload?.daily?.temperature_2m_max?.[0];
+    if (typeof dailyMax === 'number' && current && typeof current.weather_code === 'number') {
       return {
-        temperature: Math.round(current.temperature_2m),
+        temperature: Math.round(dailyMax),
         code: Number(current.weather_code)
       };
     }
@@ -299,7 +300,7 @@ export async function fetchHangzhouWeather() {
     throw new Error('weather_primary_payload_invalid');
   } catch (primaryError) {
     try {
-      const fallbackUrl = 'https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&timezone=Asia%2FShanghai&current_weather=true';
+      const fallbackUrl = 'https://api.open-meteo.com/v1/forecast?latitude=30.2741&longitude=120.1551&timezone=Asia%2FShanghai&current_weather=true&daily=temperature_2m_max&forecast_days=1';
       const fallbackResponse = await fetch(fallbackUrl, { headers });
       if (!fallbackResponse.ok) {
         throw new Error(`weather_fallback_status_${fallbackResponse.status}`);
@@ -307,12 +308,13 @@ export async function fetchHangzhouWeather() {
 
       const fallbackPayload = await fallbackResponse.json();
       const currentWeather = fallbackPayload?.current_weather;
-      if (!currentWeather || typeof currentWeather.temperature !== 'number' || typeof currentWeather.weathercode !== 'number') {
+      const dailyMax = fallbackPayload?.daily?.temperature_2m_max?.[0];
+      if (!currentWeather || typeof currentWeather.weathercode !== 'number') {
         throw new Error('weather_fallback_payload_invalid');
       }
 
       return {
-        temperature: Math.round(currentWeather.temperature),
+        temperature: Math.round(typeof dailyMax === 'number' ? dailyMax : currentWeather.temperature),
         code: Number(currentWeather.weathercode)
       };
     } catch (fallbackError) {
