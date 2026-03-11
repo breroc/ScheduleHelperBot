@@ -1587,9 +1587,8 @@ async function renderInlineNoteLessonMenu(env, chatId, messageId, language, user
     const prompt = mode === 'delete'
       ? t(language, 'notes.noLessonsForDeleteDay')
       : t(language, 'notes.noLessonsForDay');
-    await renderInlineNoteWeekdayMenu(env, chatId, messageId, language, user, mode);
-    await sendMessage(env, chatId, prompt, {
-      reply_markup: noteWeekdayKeyboard(language)
+    await editOrSendMessage(env, chatId, messageId, prompt, {
+      reply_markup: inlineNoteWeekdayKeyboard(language, mode)
     });
     return;
   }
