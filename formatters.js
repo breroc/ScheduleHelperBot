@@ -324,7 +324,7 @@ export function formatAdminStats(language, stats, dailyStats = null, dateKey = '
     lines.push('• -');
   } else {
     for (const item of stats.byGroup) {
-      lines.push(`• ${escapeHtml(item.group_name)}: <b>${item.count}</b>`);
+      lines.push(`• ${escapeHtml(formatGroupLabel(item.group_name))}: <b>${item.count}</b>`);
     }
   }
 
@@ -361,14 +361,14 @@ export function formatAdminUsersByGroupMessages(language, byGroupMembers) {
   let current = `${header}\n\n`;
 
   for (const group of groups) {
-    const groupTitle = `<b>${escapeHtml(group.group_name || '-')}</b>\n`;
+    const groupTitle = `<b>${escapeHtml(formatGroupLabel(group.group_name || '-'))}</b>\n`;
     const members = Array.isArray(group.members) ? group.members : [];
     const memberLines = members.length
       ? members.map((member) => {
         const lastSeen = normalizeDateTime(member.last_seen_at, language);
         const username = normalizeUsername(member.tg_username);
         if (username) {
-          return formatAdminUserLine(language, `@${escapeHtml(username)}`, member.chat_id, lastSeen);
+          return formatAdminUserLine(`@${escapeHtml(username)}`, lastSeen);
         }
 
         const fullName = [member.tg_first_name, member.tg_last_name]
@@ -376,14 +376,9 @@ export function formatAdminUsersByGroupMessages(language, byGroupMembers) {
           .join(' ')
           .trim();
         if (fullName) {
-          return formatAdminUserLine(
-            language,
-            escapeHtml(fullName),
-            `${member.chat_id}, ${t(language, 'admin.noUsername')}`,
-            lastSeen
-          );
+          return formatAdminUserLine(escapeHtml(fullName), lastSeen);
         }
-        return formatAdminUserLine(language, String(member.chat_id), t(language, 'admin.noUsername'), lastSeen);
+        return formatAdminUserLine(t(language, 'admin.noUsername'), lastSeen);
       })
       : [`• ${t(language, 'admin.noUsers')}`];
 
@@ -518,12 +513,11 @@ function normalizeDateTime(value, language) {
   return `${target.year}-${String(target.month).padStart(2, '0')}-${String(target.day).padStart(2, '0')} ${timeText}`;
 }
 
-function formatAdminUserLine(language, identity, meta, lastSeen) {
-  const parts = [String(meta)];
+function formatAdminUserLine(identity, lastSeen) {
   if (lastSeen) {
-    parts.push(`${t(language, 'admin.lastSeen')}: ${escapeHtml(lastSeen)}`);
+    return `• ${identity} — ${escapeHtml(lastSeen)}`;
   }
-  return `• ${identity} (${parts.join(', ')})`;
+  return `• ${identity}`;
 }
 
 function parseDatabaseDate(value) {
@@ -728,6 +722,34 @@ function getReminderMuteState(language, user) {
   return user?.reminder_mute_until_date === now.dateKey
     ? t(language, 'settings.mutedToday')
     : t(language, 'settings.notMuted');
+}
+
+function formatGroupLabel(groupName) {
+  const badge = getGroupBadge(groupName);
+  return `${badge} ${groupName}`;
+}
+
+function getGroupBadge(groupName) {
+  const level = String(groupName ?? '').trim().split('-')[0];
+  if (level === '1') {
+    return '🟢';
+  }
+  if (level === '2') {
+    return '🔵';
+  }
+  if (level === '3') {
+    return '🟠';
+  }
+  if (level === '4') {
+    return '🔴';
+  }
+  if (level === '5') {
+    return '🟣';
+  }
+  if (level === '6') {
+    return '⚫';
+  }
+  return '🎓';
 }
 
 function getLanguageLabel(language) {
