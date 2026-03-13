@@ -4,6 +4,9 @@ A fast, production-style Telegram bot for ZJU language-program schedules.
 
 It is built on Cloudflare Workers with pure JavaScript and is designed for one job: make daily schedule checks, reminders, and group switching simple inside Telegram.
 
+> [!NOTE]
+> This bot is intentionally narrow in scope: it is built around the bundled ZJU language-program timetable in [`schedule-data.js`](./schedule-data.js), not as a generic multi-school schedule platform.
+
 ## Overview
 
 ZJU Schedule Bot gives students a cleaner alternative to checking screenshots or timetable files manually.
@@ -29,6 +32,9 @@ The project keeps the runtime simple:
 Telegram bot: **ZJU Schedule Bot**
 
 If you are sharing this repository publicly, users can find the bot in Telegram by name.
+
+> [!NOTE]
+> The repository can be public, but production access is still controlled by your Telegram bot token, webhook secret, and Cloudflare configuration.
 
 ## Preview
 
@@ -96,6 +102,9 @@ The bot also includes a lightweight personal layer: inline settings, pinned favo
 `1-7`, `2-1`, `2-2`, `2-4`, `2-6`, `2-7`, `2-8`, `3-4`, `3-6`, `4-3`, `4-4`, `4-6`, `4-7`, `5-2`, `6-2`
 
 If your group is not available yet, contact `@thcalmdx`.
+
+> [!IMPORTANT]
+> Only the groups listed above are expected to work out of the box. If a group is missing from the static timetable, commands like `Today`, `Tomorrow`, and reminders will return empty results for that group.
 
 ## User Features
 
@@ -213,6 +222,9 @@ This file is the source of truth for:
 - morning digests
 - evening previews
 
+> [!IMPORTANT]
+> Editing D1 data will not change lesson output. If you need to update schedules, change [`schedule-data.js`](./schedule-data.js), then redeploy.
+
 ### What D1 Stores
 
 D1 is still used for runtime state:
@@ -270,6 +282,9 @@ Important:
 - `BOT_TOKEN` and `WEBHOOK_SECRET` must be stored as **runtime secrets**
 - do not put Telegram secrets into `wrangler.jsonc`
 
+> [!WARNING]
+> This project assumes a production-style Cloudflare Workers setup. Do not commit live bot tokens, webhook secrets, or admin identifiers into tracked config files.
+
 ## Webhook Behavior
 
 Accepted routes:
@@ -285,9 +300,15 @@ Webhook protection:
 
 There is no polling mode in this project.
 
+> [!WARNING]
+> The bot is webhook-only. If the webhook is misconfigured, the Worker may still look healthy while Telegram updates never reach your bot.
+
 ## Cron Schedule
 
 All bot logic works in `Asia/Shanghai`.
+
+> [!IMPORTANT]
+> Cron expressions in [`wrangler.jsonc`](./wrangler.jsonc) are written in UTC, but the product behavior is defined for Shanghai time. Recalculate every cron entry carefully before changing schedule windows.
 
 Current `wrangler.jsonc` cron setup:
 
@@ -330,6 +351,9 @@ Reminder cron:
 This project no longer relies on hot-path schema initialization.
 
 Prepare the database manually before production deploy.
+
+> [!WARNING]
+> A fresh deploy will not fully self-heal an incomplete database schema. If required columns or service tables are missing, features such as reminders, notes, or delivery stats can silently break.
 
 ### Existing Base Tables Expected
 
@@ -406,9 +430,15 @@ Notes:
 - run `ALTER TABLE ... ADD COLUMN` statements one by one if you are not sure which columns already exist
 - SQLite / D1 will fail on duplicate columns, which is expected
 
+> [!TIP]
+> Before running schema updates in production, inspect the current D1 schema first and keep a copy of the migration commands you applied. That makes later troubleshooting much easier.
+
 ## Updating Schedule Data
 
 All timetable maintenance now happens in [`schedule-data.js`](./schedule-data.js).
+
+> [!NOTE]
+> Static timetable edits affect multiple user-facing flows at once: direct schedule views, next-class detection, reminders, and daily digests all read from the same dataset.
 
 ### Expected Lesson Shape
 
@@ -448,6 +478,9 @@ All timetable maintenance now happens in [`schedule-data.js`](./schedule-data.js
 - duplicate lessons
 - supported groups with no static schedule rows
 
+> [!TIP]
+> After changing timetable rows, test at least one real command path in Telegram in addition to checking logs. Validation catches structural mistakes, but not every content mistake.
+
 ## Deployment
 
 ### Deploy from GitHub to Cloudflare Workers
@@ -475,6 +508,9 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
   -d "url=https://<your-worker-domain>/<WEBHOOK_PATH>" \
   -d "secret_token=<YOUR_WEBHOOK_SECRET>"
 ```
+
+> [!IMPORTANT]
+> If you enable `WEBHOOK_SECRET` in Cloudflare, the same value must be passed as `secret_token` when calling `setWebhook`, otherwise Telegram requests will be rejected.
 
 ### Check Webhook
 
@@ -509,6 +545,9 @@ Expected result:
   - confirm the group has rows in `schedule-data.js`
 - reminders or stats look wrong:
   - verify missing D1 columns were added manually
+
+> [!NOTE]
+> The most common production issues in this project come from three places: webhook mismatch, missing D1 schema updates, or timetable data drifting from the real class schedule.
 
 ### Useful Logs
 
