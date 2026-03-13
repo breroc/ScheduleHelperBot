@@ -1,6 +1,26 @@
-# ZJU Schedule Bot
+<h1 align="center">
+  <img src="./docs/readme-assets/schedule-bot-icon.png" alt="ZJU Schedule Bot icon" width="72" />
+  ZJU Schedule Bot
+</h1>
 
-A fast, production-style Telegram bot for ZJU language-program schedules.
+<p align="center">
+  A fast, production-style Telegram bot for ZJU language-program schedules.
+</p>
+
+<p align="center">
+  <a href="https://github.com/theycallmedern/ZJU-Schedule-Bot/releases">
+    <img src="./docs/readme-assets/latest_release.png" alt="Latest release" height="44" />
+  </a>
+  <a href="https://github.com/theycallmedern/ZJU-Schedule-Bot/actions">
+    <img src="./docs/readme-assets/desktop_build_status.png" alt="Build status" height="44" />
+  </a>
+  <a href="./SECURITY.md">
+    <img src="./docs/readme-assets/security.png" alt="Security policy" height="44" />
+  </a>
+  <a href="./LICENSE">
+    <img src="./docs/readme-assets/license.png" alt="License" height="44" />
+  </a>
+</p>
 
 It is built on Cloudflare Workers with pure JavaScript and is designed for one job: make daily schedule checks, reminders, and group switching simple inside Telegram.
 
