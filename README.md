@@ -126,7 +126,7 @@ If your group is not available yet, contact `@thcalmdx`.
 ### Notifications
 
 - reminders before lessons
-- reminder lead time: `5 min`, `10 min`, or `Off`
+- reminder lead time: `30 min`, `10 min`, `5 min`, or `Off`
 - temporary reminder mute for the current day
 - morning digest with:
   - weather in Hangzhou

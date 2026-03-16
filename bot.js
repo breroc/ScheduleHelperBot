@@ -1851,10 +1851,11 @@ function inlineNotificationsKeyboard(language) {
   return {
     inline_keyboard: [
       [
-        { text: '5 min', callback_data: 'settings:notifications:5 min' },
+        { text: '30 min', callback_data: 'settings:notifications:30 min' },
         { text: '10 min', callback_data: 'settings:notifications:10 min' }
       ],
       [
+        { text: '5 min', callback_data: 'settings:notifications:5 min' },
         { text: labels.off, callback_data: 'settings:notifications:off' }
       ],
       [
@@ -1877,7 +1878,7 @@ function notificationsKeyboard(language) {
   const menu = getLocale(language).menu;
   const labels = getLocale(language).labels;
   return {
-    keyboard: [['5 min', '10 min'], [labels.off, menu.back]],
+    keyboard: [['30 min', '10 min'], ['5 min', labels.off], [menu.back]],
     resize_keyboard: true
   };
 }

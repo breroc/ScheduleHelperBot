@@ -239,6 +239,9 @@ export function pickLanguageByTelegram(telegramLanguageCode) {
 }
 
 export function parseReminderChoice(text) {
+  if (text === '30 min') {
+    return { enabled: 1, minutes: 30 };
+  }
   if (text === '5 min') {
     return { enabled: 1, minutes: 5 };
   }
