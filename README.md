@@ -103,7 +103,7 @@ The bot also includes a lightweight personal layer: inline settings, pinned favo
 
 ## Supported Groups
 
-`1-7`, `2-1`, `2-2`, `2-4`, `2-6`, `2-7`, `2-8`, `3-4`, `3-6`, `4-3`, `4-4`, `4-6`, `4-7`, `5-2`, `6-2`
+`1-7`, `2-1`, `2-2`, `2-4`, `2-5`, `2-6`, `2-7`, `2-8`, `3-4`, `3-6`, `4-3`, `4-4`, `4-6`, `4-7`, `5-2`, `6-2`
 
 If your group is not available yet, contact `@thcalmdx`.
 

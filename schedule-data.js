@@ -378,6 +378,96 @@ export const STATIC_SCHEDULE = [
     end_time: '16:15'
   },
   {
+    group_name: '2-5',
+    day_of_week: 'monday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Intensive Reading II',
+    teacher: 'Su Mingming',
+    classroom: '31-105',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'monday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Listening II',
+    teacher: 'Chen Yanjun',
+    classroom: '31-105',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'tuesday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Intensive Reading II',
+    teacher: 'Su Mingming',
+    classroom: '31-105',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'wednesday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Intensive Reading II',
+    teacher: 'Su Mingming',
+    classroom: '31-105',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'wednesday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Speaking II',
+    teacher: 'He He',
+    classroom: '31-105',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'thursday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Listening II',
+    teacher: 'Chen Yanjun',
+    classroom: '31-105',
+    start_time: '08:00',
+    end_time: '09:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'thursday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Intensive Reading II',
+    teacher: 'Su Mingming',
+    classroom: '31-105',
+    start_time: '10:00',
+    end_time: '11:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'friday',
+    lesson_number: 1,
+    subject: 'Elementary Chinese Speaking II',
+    teacher: 'He He',
+    classroom: '31-105',
+    start_time: '13:00',
+    end_time: '14:30'
+  },
+  {
+    group_name: '2-5',
+    day_of_week: 'friday',
+    lesson_number: 2,
+    subject: 'Elementary Chinese Intensive Reading II',
+    teacher: 'Su Mingming',
+    classroom: '31-105',
+    start_time: '14:45',
+    end_time: '16:15'
+  },
+  {
     group_name: '3-6',
     day_of_week: 'monday',
     lesson_number: 1,
